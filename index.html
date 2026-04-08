@@ -119,37 +119,55 @@
       document.getElementById(type === 'login' ? 'btnLogin' : 'btnSave').disabled = show;
     }
 
-        // --- LÓGICA DE VOZ (ANTI-ECO MEJORADA) ---
+        // ==========================================
+    // LÓGICA DE VOZ DEFINITIVA (SISTEMA DE RECONSTRUCCIÓN)
+    // ==========================================
     let recognition;
     let isListening = false;
-    let lastProcessedIndex = -1; // <--- ESTO ES EL FILTRO ANTIECO
+    let finalTranscript = ""; // Memoria absoluta de lo ya dicho
 
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SpeechRecognition();
       recognition.lang = 'es-CO';
       recognition.continuous = true;
-      recognition.interimResults = true;
+      recognition.interimResults = true; // Mantiene la fluidez visual
+
+      // Al iniciar, leemos si el usuario ya había escrito algo a mano
+      recognition.onstart = () => {
+        finalTranscript = document.getElementById('transcriptPreview').value;
+        if (finalTranscript.length > 0 && !finalTranscript.endsWith(" ")) {
+          finalTranscript += " ";
+        }
+      };
 
       recognition.onresult = (event) => {
-        // Solo procesamos lo nuevo que venga en el evento
+        let interimTranscript = "";
+
+        // RECONSTRUCCIÓN TOTAL: No sumamos a lo ciego, clasificamos.
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-          // Solo aceptamos si es un índice nuevo que no habíamos procesado
-          if (i > lastProcessedIndex) {
-            if (event.results[i].isFinal) {
-              document.getElementById('transcriptPreview').value += event.results[i][0].transcript + " ";
-              lastProcessedIndex = i; // Marcamos este índice como ya procesado
-            }
+          if (event.results[i].isFinal) {
+            // Si Chrome dice "esto es definitivo", va a la caja fuerte
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            // Si Chrome está "adivinando", va a la caja temporal
+            interimTranscript += event.results[i][0].transcript;
           }
         }
+
+        // Pintamos en pantalla: La caja fuerte + la caja temporal
+        document.getElementById('transcriptPreview').value = finalTranscript + interimTranscript;
         
-        // Habilitar botón si hay texto
+        // Habilitamos el botón de enviar
         document.getElementById('btnSendAcademic').disabled = 
           document.getElementById('transcriptPreview').value.trim().length < 5;
       };
 
       recognition.onerror = (event) => {
         console.error("Error de voz: ", event.error);
+        if (event.error === 'not-allowed') {
+          alert("Por favor, permite el acceso al micrófono.");
+        }
       };
     }
 
@@ -158,10 +176,9 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach(t => t.stop());
-      } catch (e) { return alert("Permite el acceso al micrófono."); }
+      } catch (e) { return alert("Permite el acceso al micrófono en el candadito (🔒)."); }
 
       if (!isListening) {
-        lastProcessedIndex = -1; // Reseteamos el contador cada vez que iniciamos
         recognition.start();
         isListening = true;
         btn.innerHTML = "🛑 Detener";
@@ -171,6 +188,33 @@
         isListening = false;
         btn.innerHTML = "🎙️ Hablar";
         btn.classList.replace('btn-danger', 'btn-outline-danger');
+      }
+    }
+
+    async function handleAcademicData() {
+      const texto = document.getElementById('transcriptPreview').value.trim();
+      const btn = document.getElementById('btnSendAcademic');
+      btn.disabled = true;
+      btn.innerHTML = 'Enviando a la IA...';
+
+      const res = await callBackend({ action: "saveAcademic", userId: currentUserId, rawText: texto });
+
+      if (res && res.success) {
+        const chat = document.getElementById('chatWindow');
+        chat.innerHTML += `<div class="bubble bubble-user">${texto}</div>`;
+        chat.innerHTML += `<div class="bubble bubble-bot"><strong>SinCamello:</strong> ¡Entendido! Ya guardé eso. ¿Pasamos a tu experiencia laboral?</div>`;
+        chat.scrollTop = chat.scrollHeight;
+        
+        // LIMPIEZA TOTAL PARA EL SIGUIENTE MENSAJE
+        document.getElementById('transcriptPreview').value = "";
+        finalTranscript = ""; // ¡Vital para no arrastrar texto viejo!
+        
+        btn.innerHTML = "Enviar a la IA";
+        btn.disabled = false;
+      } else {
+        alert("Fallo al guardar.");
+        btn.innerHTML = "Enviar a la IA";
+        btn.disabled = false;
       }
     }
   </script>

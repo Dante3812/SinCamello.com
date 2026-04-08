@@ -119,22 +119,52 @@
       document.getElementById(type === 'login' ? 'btnLogin' : 'btnSave').disabled = show;
     }
 
-    // --- LÓGICA DE VOZ ---
+        // --- LÓGICA DE VOZ (CON FILTRO ANTI-ECO) ---
     let recognition;
     let isListening = false;
+    let textoGuardado = ""; // Memoria para lo que ya se confirmó
+
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SpeechRecognition();
       recognition.lang = 'es-CO';
       recognition.continuous = true;
-      recognition.interimResults = true;
+      recognition.interimResults = true; // Muestra el texto mientras hablas
+
+      // Cuando el micro arranca, guardamos lo que ya estaba en el cuadro de texto
+      recognition.onstart = () => {
+        textoGuardado = document.getElementById('transcriptPreview').value;
+        if (textoGuardado.length > 0 && !textoGuardado.endsWith(" ")) {
+          textoGuardado += " ";
+        }
+      };
+
       recognition.onresult = (event) => {
+        let textoIntermedio = "";
+        let nuevoTextoFinal = "";
+
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            document.getElementById('transcriptPreview').value += event.results[i][0].transcript + " ";
+            nuevoTextoFinal += event.results[i][0].transcript + " ";
+          } else {
+            textoIntermedio += event.results[i][0].transcript;
           }
         }
+
+        // Si ya confirmó una frase, la guardamos en la memoria dura
+        if (nuevoTextoFinal) {
+          textoGuardado += nuevoTextoFinal;
+        }
+
+        // Mostramos la memoria dura + lo que está adivinando en este momento
+        document.getElementById('transcriptPreview').value = textoGuardado + textoIntermedio;
+        
+        // Habilitar el botón de enviar
         document.getElementById('btnSendAcademic').disabled = document.getElementById('transcriptPreview').value.trim().length < 5;
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Error de reconocimiento: ", event.error);
       };
     }
 
@@ -142,17 +172,19 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach(t => t.stop());
-      } catch (e) { return alert("Permite el micro."); }
+      } catch (e) { return alert("Permite el acceso al micrófono en el candadito (🔒)."); }
+      
+      const btn = document.getElementById('btnMic');
       if (!isListening) {
         recognition.start();
         isListening = true;
-        document.getElementById('btnMic').innerHTML = "🛑 Detener";
-        document.getElementById('btnMic').classList.replace('btn-outline-danger', 'btn-danger');
+        btn.innerHTML = "🛑 Detener";
+        btn.classList.replace('btn-outline-danger', 'btn-danger');
       } else {
         recognition.stop();
         isListening = false;
-        document.getElementById('btnMic').innerHTML = "🎙️ Hablar";
-        document.getElementById('btnMic').classList.replace('btn-danger', 'btn-outline-danger');
+        btn.innerHTML = "🎙️ Hablar";
+        btn.classList.replace('btn-danger', 'btn-outline-danger');
       }
     }
 
@@ -160,13 +192,23 @@
       const texto = document.getElementById('transcriptPreview').value.trim();
       const btn = document.getElementById('btnSendAcademic');
       btn.disabled = true;
+      btn.innerHTML = 'Enviando...';
+      
       const res = await callBackend({ action: "saveAcademic", userId: currentUserId, rawText: texto });
+      
       if (res && res.success) {
         const chat = document.getElementById('chatWindow');
         chat.innerHTML += `<div class="bubble bubble-user">${texto}</div>`;
         chat.innerHTML += `<div class="bubble bubble-bot"><strong>SinCamello:</strong> ¡Entendido! Ya guardé eso. ¿Pasamos a tu experiencia laboral?</div>`;
         chat.scrollTop = chat.scrollHeight;
+        
         document.getElementById('transcriptPreview').value = "";
+        textoGuardado = ""; // Limpiamos la memoria para la siguiente nota
+        btn.innerHTML = "Enviar a la IA";
+        btn.disabled = false;
+      } else {
+        alert("Fallo al guardar.");
+        btn.innerHTML = "Enviar a la IA";
         btn.disabled = false;
       }
     }

@@ -118,8 +118,9 @@
       document.getElementById(type + 'Loader').style.display = show ? 'block' : 'none';
       document.getElementById(type === 'login' ? 'btnLogin' : 'btnSave').disabled = show;
     }
-    // ==========================================
-    // LÓGICA DE VOZ (MODO WHATSAPP / GEMINI)
+    
+        // ==========================================
+    // LÓGICA DE VOZ - MODO ESTABLE (ANTI-ECO)
     // ==========================================
     let recognition;
     let isListening = false;
@@ -130,66 +131,55 @@
       recognition.lang = 'es-CO';
       recognition.continuous = true;
       
-      // EL CAMBIO MÁGICO: Apagamos los resultados intermedios.
-      // Ahora Chrome solo nos entregará el texto cuando esté 100% seguro.
+      // CAMBIO CRÍTICO: "interimResults = false"
+      // Esto le dice al navegador: "No me mandes borradores, solo mandame la frase final"
       recognition.interimResults = false; 
 
       recognition.onstart = () => {
-        const preview = document.getElementById('transcriptPreview');
-        // Retroalimentación visual en la caja de texto
-        preview.value = ""; 
-        preview.placeholder = "🔴 Escuchando... Termina de hablar para ver el texto.";
-        preview.style.backgroundColor = "#fff0f0"; // Un fondito rojo suave
+        document.getElementById('transcriptPreview').placeholder = "🎤 Escuchando... (di tu frase completa y detén)";
       };
 
       recognition.onresult = (event) => {
-        let textoNuevo = "";
+        let transcript = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            textoNuevo += event.results[i][0].transcript + " ";
+            transcript += event.results[i][0].transcript + " ";
           }
         }
         
-        const preview = document.getElementById('transcriptPreview');
-        preview.value += textoNuevo;
-        preview.placeholder = "Presiona el micro y habla...";
-        preview.style.backgroundColor = "#fff"; // Vuelve a blanco
+        // Solo escribimos si hay algo nuevo
+        if (transcript.length > 0) {
+            document.getElementById('transcriptPreview').value += transcript;
+        }
         
-        document.getElementById('btnSendAcademic').disabled = preview.value.trim().length < 5;
-      };
-
-      recognition.onerror = (event) => {
-        console.error("Error de voz: ", event.error);
-        const preview = document.getElementById('transcriptPreview');
-        preview.placeholder = "Presiona el micro y habla...";
-        preview.style.backgroundColor = "#fff";
+        document.getElementById('btnSendAcademic').disabled = 
+          document.getElementById('transcriptPreview').value.trim().length < 5;
       };
     }
 
     async function toggleMic() {
       const btn = document.getElementById('btnMic');
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(t => t.stop());
-      } catch (e) { return alert("Permite el acceso al micrófono en el candadito (🔒)."); }
+      const preview = document.getElementById('transcriptPreview');
 
       if (!isListening) {
-        recognition.start();
-        isListening = true;
-        btn.innerHTML = "🛑 Finalizar grabación";
-        btn.classList.replace('btn-outline-danger', 'btn-danger');
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(t => t.stop());
+          
+          recognition.start();
+          isListening = true;
+          btn.innerHTML = "🛑 Detener grabación";
+          btn.classList.replace('btn-outline-danger', 'btn-danger');
+        } catch (e) { alert("Permite el acceso al micrófono."); }
       } else {
         recognition.stop();
         isListening = false;
         btn.innerHTML = "🎙️ Hablar";
         btn.classList.replace('btn-danger', 'btn-outline-danger');
-        
-        // Volvemos la caja a la normalidad en caso de que la detenga manualmente
-        const preview = document.getElementById('transcriptPreview');
         preview.placeholder = "Presiona el micro y habla...";
-        preview.style.backgroundColor = "#fff";
       }
     }
+    
   </script>
 </body>
 </html>

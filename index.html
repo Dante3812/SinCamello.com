@@ -4,29 +4,50 @@
   <base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-    /* 1. Ajustamos el fondo para que los bordes sean más pequeños en móviles */
+  <style>
     body { background: #f0f2f5; height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', sans-serif; padding: 10px; }
     
-    /* 2. La tarjeta ahora ocupa el 95% del alto de la pantalla y tiene menos relleno a los lados */
-    .card-custom { background: white; padding: 1.2rem; border-radius: 1.5rem; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 450px; height: 95vh; display: flex; flex-direction: column; }
+    .card-custom { 
+      background: white; 
+      padding: 1.5rem; 
+      border-radius: 1.5rem; 
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+      width: 100%; 
+      max-width: 450px; 
+      height: 90vh; /* Un alto más seguro para no chocar con las barras del celular */
+      display: flex; 
+      flex-direction: column; 
+    }
     
     .btn-main { background: #1abc9c; border: none; padding: 0.8rem; color: white; font-weight: 600; transition: 0.3s; }
     .btn-main:hover { background: #16a085; transform: translateY(-2px); }
-    .form-control { border-radius: 0.8rem; padding: 0.7rem; margin-bottom: 1rem; }
+    .form-control { border-radius: 0.8rem; padding: 0.7rem; }
     .loader { display: none; margin-top: 1rem; }
     
-    /* 3. ESTÉTICA DE CHAT: Le quitamos el alto fijo y usamos flex-grow para que empuje los botones hacia abajo */
-    .chat-container { flex-grow: 1; height: auto; min-height: 0; overflow-y: auto; border-radius: 1rem; background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; display: flex; flex-direction: column; }
+    /* CHAT CONTAINER: Toma el espacio disponible pero con límites */
+    .chat-container { 
+      flex-grow: 1; 
+      overflow-y: auto; 
+      border-radius: 1rem; 
+      background: #f8f9fa; 
+      padding: 15px; 
+      border: 1px solid #dee2e6; 
+      display: flex; 
+      flex-direction: column; 
+      margin-bottom: 15px;
+    }
     
     .bubble { padding: 10px 15px; border-radius: 1.2rem; margin-bottom: 10px; max-width: 85%; font-size: 0.9rem; line-height: 1.4; }
     .bubble-bot { background: #e9ecef; color: #333; align-self: flex-start; border-bottom-left-radius: 0.2rem; }
     .bubble-user { background: #1abc9c; color: white; align-self: flex-end; border-bottom-right-radius: 0.2rem; margin-left: auto; }
     
-    /* BOTONES CUADRADOS MANTIENEN SU TAMAÑO */
-    .btn-square { width: 55px; height: 55px; border-radius: 0.8rem; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; padding: 0; transition: all 0.2s; }
+    /* ZONA DE INPUT BLINDADA CONTRA APLASTAMIENTOS */
+    .input-area { flex-shrink: 0; display: flex; gap: 0.5rem; }
+    .input-area textarea { flex-grow: 1; margin-bottom: 0; resize: none; }
+    .input-buttons { display: flex; flex-direction: column; gap: 0.5rem; }
+    
+    .btn-square { width: 55px; height: 50px; border-radius: 0.8rem; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; padding: 0; transition: all 0.2s; }
   </style>
-
 </head>
 <body>
 
@@ -59,12 +80,12 @@
       </div>
     </div>
 
-    <div class="d-flex gap-2">
-      <textarea id="transcriptPreview" class="form-control mb-0" style="resize: none;" rows="3" placeholder="Presiona el micro y habla..." oninput="checkTextLength()"></textarea>
+    <div class="input-area">
+      <textarea id="transcriptPreview" class="form-control" rows="2" placeholder="Presiona el micro y habla..." oninput="checkTextLength()"></textarea>
       
-      <div class="d-flex flex-column gap-2">
-        <button id="btnMic" onclick="toggleMic()" class="btn btn-outline-danger btn-square flex-grow-1" title="Hablar / Pausar">🎙️</button>
-        <button id="btnSendAcademic" onclick="handleAcademicData()" class="btn btn-main btn-square flex-grow-1" title="Enviar a la IA" disabled>➤</button>
+      <div class="input-buttons">
+        <button id="btnMic" onclick="toggleMic()" class="btn btn-outline-danger btn-square" title="Hablar / Pausar">🎙️</button>
+        <button id="btnSendAcademic" onclick="handleAcademicData()" class="btn btn-main btn-square" title="Enviar a la IA" disabled>➤</button>
       </div>
     </div>
   </div>

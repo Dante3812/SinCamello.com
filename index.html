@@ -118,56 +118,51 @@
       document.getElementById(type + 'Loader').style.display = show ? 'block' : 'none';
       document.getElementById(type === 'login' ? 'btnLogin' : 'btnSave').disabled = show;
     }
-
-        // ==========================================
-    // LÓGICA DE VOZ DEFINITIVA (SISTEMA DE RECONSTRUCCIÓN)
+    // ==========================================
+    // LÓGICA DE VOZ (MODO WHATSAPP / GEMINI)
     // ==========================================
     let recognition;
     let isListening = false;
-    let finalTranscript = ""; // Memoria absoluta de lo ya dicho
 
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SpeechRecognition();
       recognition.lang = 'es-CO';
       recognition.continuous = true;
-      recognition.interimResults = true; // Mantiene la fluidez visual
+      
+      // EL CAMBIO MÁGICO: Apagamos los resultados intermedios.
+      // Ahora Chrome solo nos entregará el texto cuando esté 100% seguro.
+      recognition.interimResults = false; 
 
-      // Al iniciar, leemos si el usuario ya había escrito algo a mano
       recognition.onstart = () => {
-        finalTranscript = document.getElementById('transcriptPreview').value;
-        if (finalTranscript.length > 0 && !finalTranscript.endsWith(" ")) {
-          finalTranscript += " ";
-        }
+        const preview = document.getElementById('transcriptPreview');
+        // Retroalimentación visual en la caja de texto
+        preview.value = ""; 
+        preview.placeholder = "🔴 Escuchando... Termina de hablar para ver el texto.";
+        preview.style.backgroundColor = "#fff0f0"; // Un fondito rojo suave
       };
 
       recognition.onresult = (event) => {
-        let interimTranscript = "";
-
-        // RECONSTRUCCIÓN TOTAL: No sumamos a lo ciego, clasificamos.
+        let textoNuevo = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            // Si Chrome dice "esto es definitivo", va a la caja fuerte
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            // Si Chrome está "adivinando", va a la caja temporal
-            interimTranscript += event.results[i][0].transcript;
+            textoNuevo += event.results[i][0].transcript + " ";
           }
         }
-
-        // Pintamos en pantalla: La caja fuerte + la caja temporal
-        document.getElementById('transcriptPreview').value = finalTranscript + interimTranscript;
         
-        // Habilitamos el botón de enviar
-        document.getElementById('btnSendAcademic').disabled = 
-          document.getElementById('transcriptPreview').value.trim().length < 5;
+        const preview = document.getElementById('transcriptPreview');
+        preview.value += textoNuevo;
+        preview.placeholder = "Presiona el micro y habla...";
+        preview.style.backgroundColor = "#fff"; // Vuelve a blanco
+        
+        document.getElementById('btnSendAcademic').disabled = preview.value.trim().length < 5;
       };
 
       recognition.onerror = (event) => {
         console.error("Error de voz: ", event.error);
-        if (event.error === 'not-allowed') {
-          alert("Por favor, permite el acceso al micrófono.");
-        }
+        const preview = document.getElementById('transcriptPreview');
+        preview.placeholder = "Presiona el micro y habla...";
+        preview.style.backgroundColor = "#fff";
       };
     }
 
@@ -181,40 +176,18 @@
       if (!isListening) {
         recognition.start();
         isListening = true;
-        btn.innerHTML = "🛑 Detener";
+        btn.innerHTML = "🛑 Finalizar grabación";
         btn.classList.replace('btn-outline-danger', 'btn-danger');
       } else {
         recognition.stop();
         isListening = false;
         btn.innerHTML = "🎙️ Hablar";
         btn.classList.replace('btn-danger', 'btn-outline-danger');
-      }
-    }
-
-    async function handleAcademicData() {
-      const texto = document.getElementById('transcriptPreview').value.trim();
-      const btn = document.getElementById('btnSendAcademic');
-      btn.disabled = true;
-      btn.innerHTML = 'Enviando a la IA...';
-
-      const res = await callBackend({ action: "saveAcademic", userId: currentUserId, rawText: texto });
-
-      if (res && res.success) {
-        const chat = document.getElementById('chatWindow');
-        chat.innerHTML += `<div class="bubble bubble-user">${texto}</div>`;
-        chat.innerHTML += `<div class="bubble bubble-bot"><strong>SinCamello:</strong> ¡Entendido! Ya guardé eso. ¿Pasamos a tu experiencia laboral?</div>`;
-        chat.scrollTop = chat.scrollHeight;
         
-        // LIMPIEZA TOTAL PARA EL SIGUIENTE MENSAJE
-        document.getElementById('transcriptPreview').value = "";
-        finalTranscript = ""; // ¡Vital para no arrastrar texto viejo!
-        
-        btn.innerHTML = "Enviar a la IA";
-        btn.disabled = false;
-      } else {
-        alert("Fallo al guardar.");
-        btn.innerHTML = "Enviar a la IA";
-        btn.disabled = false;
+        // Volvemos la caja a la normalidad en caso de que la detenga manualmente
+        const preview = document.getElementById('transcriptPreview');
+        preview.placeholder = "Presiona el micro y habla...";
+        preview.style.backgroundColor = "#fff";
       }
     }
   </script>

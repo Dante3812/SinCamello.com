@@ -5,23 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background: #f0f2f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', sans-serif; padding: 20px; }
-    .card-custom { background: white; padding: 2.5rem; border-radius: 1.5rem; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+    body { background: #f0f2f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', sans-serif; padding: 15px; }
+    /* Hice la tarjeta un poco más alta para que el chat tenga más espacio */
+    .card-custom { background: white; padding: 2rem; border-radius: 1.5rem; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 450px; min-height: 85vh; display: flex; flex-direction: column; }
     .btn-main { background: #1abc9c; border: none; padding: 0.8rem; color: white; font-weight: 600; transition: 0.3s; }
     .btn-main:hover { background: #16a085; transform: translateY(-2px); }
     .form-control { border-radius: 0.8rem; padding: 0.7rem; margin-bottom: 1rem; }
     .loader { display: none; margin-top: 1rem; }
     
-    /* ESTÉTICA DE CHAT PROFESIONAL */
-    .chat-container { height: 280px; overflow-y: auto; border-radius: 1rem; background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; display: flex; flex-direction: column; }
+    /* ESTÉTICA DE CHAT PROFESIONAL (Ampliado) */
+    .chat-container { flex-grow: 1; height: 400px; overflow-y: auto; border-radius: 1rem; background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; display: flex; flex-direction: column; }
     .bubble { padding: 10px 15px; border-radius: 1.2rem; margin-bottom: 10px; max-width: 85%; font-size: 0.9rem; line-height: 1.4; }
     .bubble-bot { background: #e9ecef; color: #333; align-self: flex-start; border-bottom-left-radius: 0.2rem; }
     .bubble-user { background: #1abc9c; color: white; align-self: flex-end; border-bottom-right-radius: 0.2rem; margin-left: auto; }
+    
+    /* NUEVOS ESTILOS PARA LOS BOTONES CUADRADOS */
+    .btn-square { width: 55px; border-radius: 0.8rem; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; padding: 0; transition: all 0.2s; }
   </style>
 </head>
 <body>
 
-  <div id="loginSection" class="card-custom text-center">
+  <div id="loginSection" class="card-custom text-center justify-content-center" style="min-height: auto;">
     <h2 class="fw-bold">SinCamello.com</h2>
     <p class="text-muted">Ingresa tu código Beta</p>
     <input type="text" id="userId" class="form-control text-center fw-bold" placeholder="EJ: XJ72K" maxlength="5">
@@ -29,7 +33,7 @@
     <div id="loginLoader" class="loader"><div class="spinner-border text-success"></div></div>
   </div>
 
-  <div id="basicDataSection" class="card-custom" style="display: none;">
+  <div id="basicDataSection" class="card-custom" style="display: none; min-height: auto;">
     <h2 class="text-center fw-bold">¡Bienvenido!</h2>
     <p class="text-center text-muted small mb-4">Completa tu perfil básico</p>
     <input type="text" id="nombres" class="form-control" placeholder="Nombres">
@@ -42,7 +46,7 @@
   </div>
 
   <div id="academicSection" class="card-custom" style="display: none;">
-    <h3 class="text-center fw-bold mb-3">Asistente de Perfil</h3>
+    <h3 class="text-center fw-bold mb-3">SinCamello IA</h3>
     
     <div id="chatWindow" class="chat-container mb-3">
       <div class="bubble bubble-bot">
@@ -50,15 +54,14 @@
       </div>
     </div>
 
-    <div class="mb-3">
-      <label class="small text-muted mb-1">Tu respuesta (puedes editarla):</label>
-      <textarea id="transcriptPreview" class="form-control" rows="3" placeholder="Presiona el micro y habla..." oninput="checkTextLength()"></textarea>
+    <div class="d-flex gap-2">
+      <textarea id="transcriptPreview" class="form-control mb-0" style="resize: none;" rows="3" placeholder="Presiona el micro y habla..." oninput="checkTextLength()"></textarea>
+      
+      <div class="d-flex flex-column gap-2">
+        <button id="btnMic" onclick="toggleMic()" class="btn btn-outline-danger btn-square flex-grow-1" title="Hablar / Pausar">🎙️</button>
+        <button id="btnSendAcademic" onclick="handleAcademicData()" class="btn btn-main btn-square flex-grow-1" title="Enviar a la IA" disabled>➤</button>
+      </div>
     </div>
-
-    <div class="d-flex gap-2 mb-2">
-      <button id="btnMic" onclick="toggleMic()" class="btn btn-outline-danger w-100 fw-bold">🎙️ Hablar</button>
-    </div>
-    <button id="btnSendAcademic" onclick="handleAcademicData()" class="btn btn-main w-100" disabled>Enviar a la IA</button>
   </div>
 
   <script>
@@ -134,7 +137,7 @@
       recognition = new SpeechRecognition();
       recognition.lang = 'es-CO';
       recognition.continuous = true; 
-      recognition.interimResults = false; // Sin eco visual
+      recognition.interimResults = false; 
 
       recognition.onstart = () => {
         document.getElementById('transcriptPreview').placeholder = "🎤 Escuchando... (Añadiendo a tu respuesta)";
@@ -150,7 +153,6 @@
         
         if (transcript.length > 0) {
             const preview = document.getElementById('transcriptPreview');
-            // Cuidamos que no se peguen las palabras si ya había texto
             if (preview.value.length > 0 && !preview.value.endsWith(" ")) {
                 preview.value += " ";
             }
@@ -159,11 +161,11 @@
         }
       };
 
-      // Si Android apaga el micro por silencio, lo aceptamos con gracia
       recognition.onend = () => {
         isListening = false;
         const btn = document.getElementById('btnMic');
-        btn.innerHTML = "🎙️ Seguir Hablando"; // Invitamos al usuario a continuar si quiere
+        // Solo cambiamos el ícono en lugar de meter texto largo para que se mantenga cuadrado
+        btn.innerHTML = "🎙️"; 
         btn.classList.replace('btn-danger', 'btn-outline-danger');
         document.getElementById('transcriptPreview').placeholder = "Puedes editar el texto o seguir hablando...";
         checkTextLength();
@@ -185,7 +187,8 @@
           
           recognition.start();
           isListening = true;
-          btn.innerHTML = "🛑 Pausar";
+          // Solo el ícono de Stop para el botón cuadrado
+          btn.innerHTML = "🛑";
           btn.classList.replace('btn-outline-danger', 'btn-danger');
         } catch (e) { alert("Permite el acceso al micrófono."); }
       } else {
@@ -194,14 +197,15 @@
     }
 
     // ==========================================
-    // ¡LA FUNCIÓN PERDIDA HA VUELTO!
+    // ENVÍO DE DATOS
     // ==========================================
     async function handleAcademicData() {
       const texto = document.getElementById('transcriptPreview').value.trim();
       const btn = document.getElementById('btnSendAcademic');
       
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
+      // Usamos un ícono de reloj de arena para no desarmar el botón cuadrado
+      btn.innerHTML = '⏳';
 
       const res = await callBackend({ action: "saveAcademic", userId: currentUserId, rawText: texto });
 
@@ -211,13 +215,12 @@
         chat.innerHTML += `<div class="bubble bubble-bot"><strong>SinCamello:</strong> ¡Perfecto! Ya lo guardé. ¿Hay algo más que quieras añadir?</div>`;
         chat.scrollTop = chat.scrollHeight;
         
-        // Limpiamos todo para empezar frescos
         document.getElementById('transcriptPreview').value = "";
-        btn.innerHTML = "Enviar a la IA";
-        checkTextLength(); // Forzamos apagado del botón
+        btn.innerHTML = "➤"; // Vuelve a la flechita
+        checkTextLength(); 
       } else {
         alert("Fallo al guardar en la base de datos.");
-        btn.innerHTML = "Enviar a la IA";
+        btn.innerHTML = "➤";
         btn.disabled = false;
       }
     }

@@ -52,29 +52,50 @@
   </button>
 </div>
 
-
   <script>
-    let currentUserId = "";
+    // ==========================================
+    // PUENTE DE CONEXIÓN (NUEVO)
+    // ==========================================
+    const WEB_APP_URL = "PEGAR_AQUÍ_TU_URL_DE_GOOGLE_APPS_SCRIPT";
+    let currentUserId = "https://script.google.com/macros/s/AKfycbycP2vvH52axW_PeskwLy6utB5-yBZlhgvoCzuFgsemfNimdVnIdc4KE29d1nH5xA7u/exec";
 
-    function handleLogin() {
+    // Función maestra que envía los paquetes de datos a Google
+    async function callBackend(payload) {
+      try {
+        const response = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        return await response.json();
+      } catch (error) {
+        console.error("Error de conexión:", error);
+        return { success: false, error: "Fallo al conectar con el servidor." };
+      }
+    }
+
+    // ==========================================
+    // LÓGICA DE INTERFAZ (Misma estructura, ahora con async/await)
+    // ==========================================
+    async function handleLogin() {
       const userId = document.getElementById('userId').value.trim().toUpperCase();
       if (userId.length < 5) return alert("Código incompleto.");
       toggleLoader('login', true);
 
-      google.script.run
-        .withSuccessHandler(function(res) {
-          if (res.success) {
-            currentUserId = userId;
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById(res.step).style.display = 'block';
-          } else {
-            alert(res.error);
-            toggleLoader('login', false);
-          }
-        }).setupUserEnvironment(userId);
+      // Enviamos el paquete de "setup" al backend
+      const res = await callBackend({ action: "setup", userId: userId });
+
+      if (res && res.success) {
+        currentUserId = userId;
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById(res.step).style.display = 'block';
+      } else {
+        alert(res ? res.error : "Error desconocido al acceder.");
+        toggleLoader('login', false);
+      }
     }
 
-    function handleSaveData() {
+    async function handleSaveData() {
       const data = {
         nombres: document.getElementById('nombres').value,
         apellidos: document.getElementById('apellidos').value,
@@ -84,16 +105,16 @@
       };
       toggleLoader('save', true);
 
-      google.script.run
-        .withSuccessHandler(function(res) {
-          if (res.success) {
-            document.getElementById('basicDataSection').style.display = 'none';
-            document.getElementById('academicSection').style.display = 'block';
-          } else {
-            alert(res.error);
-            toggleLoader('save', false);
-          }
-        }).saveBasicData(currentUserId, data);
+      // Enviamos el paquete de "saveBasic" al backend
+      const res = await callBackend({ action: "saveBasic", userId: currentUserId, data: data });
+
+      if (res && res.success) {
+        document.getElementById('basicDataSection').style.display = 'none';
+        document.getElementById('academicSection').style.display = 'block';
+      } else {
+        alert(res ? res.error : "Error desconocido al guardar.");
+        toggleLoader('save', false);
+      }
     }
 
     function toggleLoader(type, show) {
@@ -101,106 +122,96 @@
       document.getElementById(type === 'login' ? 'btnLogin' : 'btnSave').disabled = show;
     }
 
+    // ==========================================
+    // LÓGICA DEL MICRÓFONO
+    // ==========================================
+    let recognition;
+    let isListening = false;
 
-// introducción Micrófono 
+    // 1. CONFIGURACIÓN DEL OÍDO
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = 'es-CO';
+      recognition.continuous = true;
+      recognition.interimResults = true;
 
-let recognition;
-let isListening = false;
+      recognition.onresult = (event) => {
+        let textoIntermedio = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            document.getElementById('transcriptPreview').value += event.results[i][0].transcript + " ";
+          }
+        }
+        // Habilitar botón si hay texto suficiente
+        const preview = document.getElementById('transcriptPreview').value;
+        document.getElementById('btnSendAcademic').disabled = preview.trim().length < 10;
+      };
 
-// 1. CONFIGURACIÓN DEL OÍDO
-if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SpeechRecognition();
-  recognition.lang = 'es-CO';
-  recognition.continuous = true;
-  recognition.interimResults = true;
+      recognition.onerror = (event) => {
+        console.error("Error de reconocimiento: ", event.error);
+        if(event.error === 'not-allowed') {
+          alert("¡Parcero! Tienes que darle permiso al micrófono en el candadito de arriba.");
+        }
+      };
+    }
 
-  recognition.onresult = (event) => {
-    let textoIntermedio = '';
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-      if (event.results[i].isFinal) {
-        document.getElementById('transcriptPreview').value += event.results[i][0].transcript + " ";
+    async function toggleMic() {
+      const btn = document.getElementById('btnMic');
+      
+      // Forzar petición de permiso a nivel de hardware
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+      } catch (err) {
+        console.error("Error al pedir permiso:", err);
+        alert("Para usar el asistente, debes permitir el acceso al micrófono en el candadito (🔒) de la barra de direcciones.");
+        return;
+      }
+
+      // Iniciar/Detener reconocimiento
+      if (!isListening) {
+        try {
+          recognition.start();
+          isListening = true;
+          btn.innerHTML = "🛑 Detener grabación";
+          btn.classList.replace('btn-outline-danger', 'btn-danger');
+          document.getElementById('chatWindow').innerHTML += `<p class="text-secondary small"><em>Escuchando...</em></p>`;
+        } catch (e) { console.log("Reconocimiento ya activo."); }
+      } else {
+        recognition.stop();
+        isListening = false;
+        btn.innerHTML = "🎙️ Continuar Hablando";
+        btn.classList.replace('btn-danger', 'btn-outline-danger');
       }
     }
-    // Habilitar botón si hay texto suficiente
-    const preview = document.getElementById('transcriptPreview').value;
-    document.getElementById('btnSendAcademic').disabled = preview.trim().length < 10;
-  };
 
-  recognition.onerror = (event) => {
-    console.error("Error de reconocimiento: ", event.error);
-    if(event.error === 'not-allowed') {
-      alert("¡Parcero! Tienes que darle permiso al micrófono en el candadito de arriba.");
-    }
-  };
-}
+    // 2. FUNCIÓN DE ENVÍO REAL AL SERVIDOR
+    async function handleAcademicData() {
+      const texto = document.getElementById('transcriptPreview').value.trim();
+      if (texto.length < 10) return;
 
-async function toggleMic() {
-  const btn = document.getElementById('btnMic');
-  const preview = document.getElementById('transcriptPreview');
+      const btn = document.getElementById('btnSendAcademic');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
 
-  // 1. Forzar petición de permiso a nivel de hardware
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    // Si llega aquí, el permiso fue aceptado. Cerramos el stream inmediatamente.
-    stream.getTracks().forEach(track => track.stop());
-  } catch (err) {
-    console.error("Error al pedir permiso:", err);
-    alert("Para usar el asistente, debes permitir el acceso al micrófono en el candadito (🔒) de la barra de direcciones.");
-    return;
-  }
+      // Enviamos el paquete de "saveAcademic" al backend
+      const res = await callBackend({ action: "saveAcademic", userId: currentUserId, rawText: texto });
 
-  // 2. Si el permiso fue aceptado, iniciamos el reconocimiento
-  if (!isListening) {
-    try {
-      recognition.start();
-      isListening = true;
-      btn.innerHTML = "🛑 Detener grabación";
-      btn.classList.replace('btn-outline-danger', 'btn-danger');
-      document.getElementById('chatWindow').innerHTML += `<p class="text-secondary small"><em>Escuchando...</em></p>`;
-    } catch (e) { console.log("Reconocimiento ya activo."); }
-  } else {
-    recognition.stop();
-    isListening = false;
-    btn.innerHTML = "🎙️ Continuar Hablando";
-    btn.classList.replace('btn-danger', 'btn-outline-danger');
-  }
-}
-
-
-
-// 2. FUNCIÓN DE ENVÍO REAL AL SERVIDOR
-function handleAcademicData() {
-  const texto = document.getElementById('transcriptPreview').value.trim();
-  if (texto.length < 10) return;
-
-  const btn = document.getElementById('btnSendAcademic');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
-
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (res.success) {
-        // Añadir el mensaje al chat visual
+      if (res && res.success) {
         const chat = document.getElementById('chatWindow');
         chat.innerHTML += `<p class="text-primary mt-2"><strong>Tú:</strong> ${texto}</p>`;
         chat.innerHTML += `<p class="text-success"><strong>SinCamello:</strong> ¡Recibido! He guardado tu información académica.</p>`;
-        chat.scrollTop = chat.scrollHeight; // Bajar el scroll automáticamente
+        chat.scrollTop = chat.scrollHeight; 
         
-        // Limpiar el área de texto para la siguiente pregunta (Experiencia Laboral)
         document.getElementById('transcriptPreview').value = "";
         btn.innerHTML = "Enviar Información";
-        alert("¡Datos enviados con éxito a tu base de datos!");
       } else {
-        alert("Error al enviar: " + res.error);
+        alert("Error al enviar: " + (res ? res.error : "Error desconocido."));
         btn.disabled = false;
         btn.innerHTML = "Enviar Información";
       }
-    })
-    .processAcademicData(currentUserId, texto); // Llamamos a la nueva función en el GS
-}
-
-
+    }
   </script>
 </body>
 </html>

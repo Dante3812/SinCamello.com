@@ -11,6 +11,11 @@
     .btn-main:hover { background: #16a085; transform: translateY(-2px); }
     .form-control { border-radius: 0.8rem; padding: 0.7rem; margin-bottom: 1rem; }
     .loader { display: none; margin-top: 1rem; }
+    .chat-container { height: 250px; overflow-y: auto; border-radius: 1rem; background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; }
+    .bubble { padding: 10px 15px; border-radius: 1rem; margin-bottom: 10px; max-width: 85%; font-size: 0.9rem; position: relative; }
+    .bubble-bot { background: #e9ecef; color: #333; align-self: flex-start; border-bottom-left-radius: 0.1rem; }
+    .bubble-user { background: #1abc9c; color: white; margin-left: auto; border-bottom-right-radius: 0.1rem; }
+
   </style>
 </head>
 <body>
@@ -35,10 +40,24 @@
   </div>
 
   <div id="academicSection" class="card-custom" style="display: none;">
-  <h2 class="text-center">Asistente Virtual</h2>
-  <div id="chatWindow" class="mb-3 p-3 border rounded-3 bg-light" style="height: 150px; overflow-y: auto; font-size: 0.9rem;">
-    <p class="text-success"><strong>SinCamello:</strong> ¡Listo! Ahora cuéntame sobre tus estudios. ¿Qué estudiaste, dónde y cuándo? (Usa el micro para hablar).</p>
+  <h2 class="text-center mb-4">Asistente de Perfil</h2>
+  
+  <div id="chatWindow" class="chat-container d-flex flex-column mb-3">
+    <div class="bubble bubble-bot">
+      <strong>SinCamello:</strong> ¡Excelente! Ahora cuéntame sobre tus estudios. ¿Qué estudiaste, dónde y en qué fechas?
+    </div>
   </div>
+
+  <div class="mb-3">
+    <label class="small text-muted mb-1">Tu respuesta (puedes editarla):</label>
+    <textarea id="transcriptPreview" class="form-control" rows="3" placeholder="Presiona el micro y habla..."></textarea>
+  </div>
+
+  <div class="d-flex gap-2 mb-2">
+    <button id="btnMic" onclick="toggleMic()" class="btn btn-outline-danger w-100 fw-bold">🎙️ Hablar</button>
+  </div>
+  <button id="btnSendAcademic" onclick="handleAcademicData()" class="btn btn-main w-100" disabled>Enviar a la IA</button>
+</div>
 
   <textarea id="transcriptPreview" class="form-control mb-3" rows="4" placeholder="Aquí aparecerá lo que digas..."></textarea>
 
@@ -56,7 +75,7 @@
     // ==========================================
     // PUENTE DE CONEXIÓN (NUEVO)
     // ==========================================
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwsUhu4k3xsa2sp32ni0jihtzYbqA7U1rMkEw5i1-QKJPYvi75kmj80BDDXmTyMwv0U/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlhOsReh6kt1Q4YYxjTnaXt3o6GFz4ti_J_Vv0YhH-MIt_4hLvP2s3yjOHrbMExP_S/exec";
     let currentUserId = "";
 
     // Función maestra que envía los paquetes de datos a Google
@@ -200,17 +219,17 @@
 
       if (res && res.success) {
         const chat = document.getElementById('chatWindow');
-        chat.innerHTML += `<p class="text-primary mt-2"><strong>Tú:</strong> ${texto}</p>`;
-        chat.innerHTML += `<p class="text-success"><strong>SinCamello:</strong> ¡Recibido! He guardado tu información académica.</p>`;
-        chat.scrollTop = chat.scrollHeight; 
+        // Añadimos tu burbuja al chat
+        chat.innerHTML += `<div class="bubble bubble-user">${texto}</div>`;
+        chat.innerHTML += `<div class="bubble bubble-bot"><strong>SinCamello:</strong> ¡Entendido! Ya guardé eso. ¿Hay algo más que quieras añadir de tus estudios o pasamos a tu experiencia laboral?</div>`;
+        
+        // Auto-scroll al final
+        chat.scrollTop = chat.scrollHeight;
         
         document.getElementById('transcriptPreview').value = "";
-        btn.innerHTML = "Enviar Información";
-      } else {
-        alert("Error al enviar: " + (res ? res.error : "Error desconocido."));
-        btn.disabled = false;
-        btn.innerHTML = "Enviar Información";
-      }
+        btn.innerHTML = "Enviar a la IA";
+    }
+
     }
   </script>
 </body>

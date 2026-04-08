@@ -52,7 +52,8 @@
 
     <div class="mb-3">
       <label class="small text-muted mb-1">Tu respuesta (puedes editarla):</label>
-      <textarea id="transcriptPreview" class="form-control" rows="3" placeholder="Presiona el micro y habla..."></textarea>
+      <textarea id="transcriptPreview" class="form-control" rows="3" placeholder="Presiona el micro y habla..."
+      oninput="checkTextLenght()"></textarea>
     </div>
 
     <div class="d-flex gap-2 mb-2">
@@ -119,24 +120,27 @@
       document.getElementById(type === 'login' ? 'btnLogin' : 'btnSave').disabled = show;
     }
     
-        // ==========================================
-    // LÓGICA DE VOZ - MODO ESTABLE (ANTI-ECO)
+       // ==========================================
+    // LÓGICA DE VOZ - MODO CONTINUO (ANTI-SILENCIOS)
     // ==========================================
     let recognition;
     let isListening = false;
+
+    // Función para activar/desactivar el botón mágicamente
+    function checkTextLength() {
+      const text = document.getElementById('transcriptPreview').value.trim();
+      document.getElementById('btnSendAcademic').disabled = text.length < 5;
+    }
 
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SpeechRecognition();
       recognition.lang = 'es-CO';
       recognition.continuous = true;
-      
-      // CAMBIO CRÍTICO: "interimResults = false"
-      // Esto le dice al navegador: "No me mandes borradores, solo mandame la frase final"
-      recognition.interimResults = false; 
+      recognition.interimResults = false; // Modo sin eco
 
       recognition.onstart = () => {
-        document.getElementById('transcriptPreview').placeholder = "🎤 Escuchando... (di tu frase completa y detén)";
+        document.getElementById('transcriptPreview').placeholder = "🎤 Escuchando... (Tómate tu tiempo para pensar)";
       };
 
       recognition.onresult = (event) => {
@@ -147,36 +151,58 @@
           }
         }
         
-        // Solo escribimos si hay algo nuevo
         if (transcript.length > 0) {
-            document.getElementById('transcriptPreview').value += transcript;
+            const preview = document.getElementById('transcriptPreview');
+            // Añadimos el texto cuidando los espacios
+            if (preview.value.length > 0 && !preview.value.endsWith(" ")) {
+                preview.value += " ";
+            }
+            preview.value += transcript;
+            checkTextLength(); // Desbloqueamos el botón si ya hay texto
         }
-        
-        document.getElementById('btnSendAcademic').disabled = 
-          document.getElementById('transcriptPreview').value.trim().length < 5;
+      };
+
+      // ¡EL TRUCO DE MAGIA PARA QUE NO SE APAGUE SOLO!
+      recognition.onend = () => {
+        if (isListening) {
+          // Si el usuario NO ha presionado detener, pero el micro se apagó por silencio...
+          // ¡Lo volvemos a encender en fracción de segundo!
+          try { recognition.start(); } catch(e) {}
+        } else {
+          // Apagado manual real (el usuario presionó Detener)
+          const btn = document.getElementById('btnMic');
+          btn.innerHTML = "🎙️ Hablar";
+          btn.classList.replace('btn-danger', 'btn-outline-danger');
+          document.getElementById('transcriptPreview').placeholder = "Presiona el micro y habla...";
+          checkTextLength(); // Revisamos el botón una última vez
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Error de voz: ", event.error);
+        // Solo apagamos si fue un error grave de permisos
+        if (event.error === 'not-allowed' || event.error === 'audio-capture') {
+            isListening = false;
+        }
       };
     }
 
     async function toggleMic() {
       const btn = document.getElementById('btnMic');
-      const preview = document.getElementById('transcriptPreview');
 
       if (!isListening) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           stream.getTracks().forEach(t => t.stop());
           
+          isListening = true; // Declaramos la intención de escuchar
           recognition.start();
-          isListening = true;
           btn.innerHTML = "🛑 Detener grabación";
           btn.classList.replace('btn-outline-danger', 'btn-danger');
         } catch (e) { alert("Permite el acceso al micrófono."); }
       } else {
-        recognition.stop();
-        isListening = false;
-        btn.innerHTML = "🎙️ Hablar";
-        btn.classList.replace('btn-danger', 'btn-outline-danger');
-        preview.placeholder = "Presiona el micro y habla...";
+        isListening = false; // Declaramos la intención de detener
+        recognition.stop();  // Esto disparará onend y apagará todo limpiamente
       }
     }
     

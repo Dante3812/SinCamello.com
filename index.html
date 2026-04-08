@@ -59,7 +59,7 @@
     }
     
     /* UI General */
-    .btn-main { background: var(--primary); border: none; padding: 0.9rem; color: white; font-weight: 600; border-radius: 0.8rem; transition: 0.2s; }
+    .btn-main { background: var(--primary); border: none; padding: 0.9rem; color: white; font-weight: 600; border-radius: 0.8rem; transition: 0.2s; width: 100%; }
     .btn-main:hover { background: var(--primary-dark); transform: translateY(-1px); color: white; }
     .form-control { border-radius: 0.8rem; padding: 0.8rem; border: 1px solid #ddd; background: #f9fafb; margin-bottom: 1rem; }
     .loader { display: none; text-align: center; margin-top: 1rem; }
@@ -120,6 +120,7 @@
       width: 45px; height: 45px; border-radius: 50%; border: none;
       display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
       transition: 0.2s;
+      flex-shrink: 0;
     }
     .btn-send { background: var(--primary); color: white; }
     .btn-send:disabled { background: #ccc; }
@@ -140,10 +141,10 @@
     <!-- LOGIN -->
     <div id="loginSection" class="screen screen-centered" style="display: flex;">
       <h2 class="fw-bold text-center mb-1" style="color: var(--primary);">SinCamello.com</h2>
-      <p class="text-center text-muted mb-4">Acceso Beta Privado</p>
+      <p class="text-center text-muted mb-4 small text-uppercase">Acceso Beta Privado</p>
       <input type="text" id="userId" class="form-control text-center fw-bold fs-4" placeholder="CÓDIGO" maxlength="5">
       <button onclick="handleLogin()" id="btnLogin" class="btn btn-main">Entrar</button>
-      <div id="loginLoader" class="loader"><div class="spinner-border text-success"></div></div>
+      <div id="loginLoader" class="loader"><div class="spinner-border text-success spinner-border-sm"></div></div>
     </div>
 
     <!-- DATOS BÁSICOS -->
@@ -155,7 +156,7 @@
       <input type="email" id="email" class="form-control" placeholder="Correo">
       <input type="text" id="ciudad" class="form-control" placeholder="Ciudad">
       <button onclick="handleSaveData()" id="btnSave" class="btn btn-main">Comenzar</button>
-      <div id="saveLoader" class="loader"><div class="spinner-border text-success"></div></div>
+      <div id="saveLoader" class="loader"><div class="spinner-border text-success spinner-border-sm"></div></div>
     </div>
 
     <!-- CHAT (MÓDULO IA) -->
@@ -168,40 +169,61 @@
       </div>
       <div class="input-wrapper">
         <textarea id="transcriptPreview" rows="1" placeholder="Habla o escribe..." oninput="autoResize(this); checkInput()"></textarea>
-        <button id="btnMic" onclick="toggleMic()" class="btn-circle btn-mic">🎙️</button>
-        <button id="btnSend" onclick="sendToIA()" class="btn-circle btn-send" disabled>➤</button>
+        <button id="btnMic" onclick="toggleMic()" class="btn-circle btn-mic" title="Usar voz">🎙️</button>
+        <button id="btnSend" onclick="sendToIA()" class="btn-circle btn-send" disabled title="Enviar">➤</button>
       </div>
     </div>
 
   </div>
 
   <script>
-    // CAMBIA ESTO POR TU URL DE IMPLEMENTACIÓN DE APPS SCRIPT
+    /**
+     * IMPORTANTE: Mantén actualizada esta URL con la última versión de tu Apps Script implementada
+     */
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby0u1XBhYQeIgs4GnACGLPdWSszxTwAww9atp6-G5FmxgHdxkpaATtn4C4gtWXQ2q8/exec";
     let currentId = "";
 
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-      document.getElementById(id).style.display = 'flex';
-      if(id === 'academicSection') scrollChat();
+      const target = document.getElementById(id);
+      if(target) {
+        target.style.display = 'flex';
+        if(id === 'academicSection') scrollChat();
+      }
     }
 
     async function call(payload) {
-      const resp = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
-      return await resp.json();
+      try {
+        const resp = await fetch(WEB_APP_URL, { 
+          method: 'POST', 
+          body: JSON.stringify(payload) 
+        });
+        return await resp.json();
+      } catch (e) {
+        console.error("Error en call:", e);
+        return { success: false, error: "Error de conexión con el servidor." };
+      }
     }
 
     async function handleLogin() {
       const val = document.getElementById('userId').value.trim().toUpperCase();
       if(val.length < 5) return;
-      document.getElementById('loginLoader').style.display = 'block';
+      
+      const loader = document.getElementById('loginLoader');
+      const btn = document.getElementById('btnLogin');
+      
+      loader.style.display = 'block';
+      btn.disabled = true;
+
       const res = await call({ action: "setup", userId: val });
+      
       if(res.success) {
         currentId = val;
         showScreen(res.step);
       } else {
-        alert(res.error);
-        document.getElementById('loginLoader').style.display = 'none';
+        alert(res.error || "Error al ingresar.");
+        loader.style.display = 'none';
+        btn.disabled = false;
       }
     }
 
@@ -213,10 +235,21 @@
         email: document.getElementById('email').value,
         ciudad: document.getElementById('ciudad').value
       };
+
+      if(!data.nombres || !data.email) {
+        alert("Por favor completa al menos nombre y correo.");
+        return;
+      }
+
       document.getElementById('saveLoader').style.display = 'block';
       const res = await call({ action: "saveBasic", userId: currentId, data });
-      if(res.success) showScreen('academicSection');
-      else document.getElementById('saveLoader').style.display = 'none';
+      
+      if(res.success) {
+        showScreen('academicSection');
+      } else {
+        alert("Hubo un problema al guardar tus datos.");
+        document.getElementById('saveLoader').style.display = 'none';
+      }
     }
 
     // --- LÓGICA DE CHAT & IA ---
@@ -227,7 +260,8 @@
     }
 
     function checkInput() {
-      document.getElementById('btnSend').disabled = document.getElementById('transcriptPreview').value.trim().length < 3;
+      const text = document.getElementById('transcriptPreview').value.trim();
+      document.getElementById('btnSend').disabled = text.length < 3;
     }
 
     function scrollChat() {
@@ -238,57 +272,88 @@
     async function sendToIA() {
       const input = document.getElementById('transcriptPreview');
       const text = input.value.trim();
+      if(!text) return;
+
       const chat = document.getElementById('chatWindow');
       const btn = document.getElementById('btnSend');
 
       // 1. Mostrar mensaje usuario
       chat.innerHTML += `<div class="bubble bubble-user">${text}</div>`;
-      input.value = ""; autoResize(input); checkInput(); scrollChat();
+      input.value = ""; 
+      autoResize(input); 
+      checkInput(); 
+      scrollChat();
 
       // 2. Estado "Pensando"
-      btn.innerHTML = "⏳"; btn.disabled = true;
+      btn.innerHTML = "⏳"; 
+      btn.disabled = true;
       const tempId = "t-" + Date.now();
       chat.innerHTML += `<div id="${tempId}" class="bubble bubble-bot"><em>Mentor está analizando...</em></div>`;
       scrollChat();
 
       // 3. Llamar Backend
       const res = await call({ action: "saveAcademic", userId: currentId, rawText: text });
-      document.getElementById(tempId).remove();
+      
+      const tempElement = document.getElementById(tempId);
+      if(tempElement) tempElement.remove();
 
-      // 4. Mostrar respuesta IA
-      const msg = res.success ? res.msg : "He guardado la nota, pero tengo problemas para responderte ahora. ¿Qué más has estudiado?";
+      // 4. Mostrar respuesta IA (viniendo de Gemini 2.5/3.1)
+      const msg = res.success ? res.msg : "He guardado la nota, pero tengo problemas para responderte ahora. Cuéntame algo más de tus estudios.";
       chat.innerHTML += `<div class="bubble bubble-bot"><strong>Mentor:</strong> ${msg}</div>`;
       
-      btn.innerHTML = "➤"; scrollChat();
+      btn.innerHTML = "➤"; 
+      scrollChat();
     }
 
     // --- RECONOCIMIENTO DE VOZ ---
     let recognition;
     let active = false;
 
-    if ('webkitSpeechRecognition' in window) {
-      recognition = new webkitSpeechRecognition();
+    if ('webkitSpeechRecognition' in window || 'speechRecognition' in window) {
+      const SpeechRecognition = window.webkitSpeechRecognition || window.speechRecognition;
+      recognition = new SpeechRecognition();
       recognition.lang = 'es-CO';
       recognition.continuous = true;
+      recognition.interimResults = false;
+
       recognition.onresult = (e) => {
         const t = e.results[e.results.length - 1][0].transcript;
         const input = document.getElementById('transcriptPreview');
         input.value += (input.value ? " " : "") + t;
-        autoResize(input); checkInput();
+        autoResize(input); 
+        checkInput();
       };
+
       recognition.onend = () => {
         active = false;
         document.getElementById('btnMic').classList.remove('active');
       };
+
+      recognition.onerror = (e) => {
+        console.error("Error Speech:", e.error);
+        stopMic();
+      };
     }
 
     function toggleMic() {
-      if(!recognition) return alert("Voz no soportada.");
+      if(!recognition) return alert("Tu navegador no soporta reconocimiento de voz.");
       const btn = document.getElementById('btnMic');
       if(!active) {
-        recognition.start(); active = true; btn.classList.add('active');
+        try {
+          recognition.start(); 
+          active = true; 
+          btn.classList.add('active');
+        } catch(e) { console.error(e); }
       } else {
+        stopMic();
+      }
+    }
+
+    function stopMic() {
+      if(recognition && active) {
         recognition.stop();
+        active = false;
+        document.getElementById('btnMic').classList.remove('active');
       }
     }
   </script>

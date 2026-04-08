@@ -12,11 +12,11 @@
     .form-control { border-radius: 0.8rem; padding: 0.7rem; margin-bottom: 1rem; }
     .loader { display: none; margin-top: 1rem; }
     
-    /* ESTÉTICA DE CHAT MEJORADA */
+    /* ESTÉTICA DE CHAT PROFESIONAL */
     .chat-container { height: 280px; overflow-y: auto; border-radius: 1rem; background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; display: flex; flex-direction: column; }
-    .bubble { padding: 10px 15px; border-radius: 1.2rem; margin-bottom: 10px; max-width: 85%; font-size: 0.9rem; line-height: 1.4; position: relative; }
+    .bubble { padding: 10px 15px; border-radius: 1.2rem; margin-bottom: 10px; max-width: 85%; font-size: 0.9rem; line-height: 1.4; }
     .bubble-bot { background: #e9ecef; color: #333; align-self: flex-start; border-bottom-left-radius: 0.2rem; }
-    .bubble-user { background: #1abc9c; color: white; align-self: flex-end; border-bottom-right-radius: 0.2rem; }
+    .bubble-user { background: #1abc9c; color: white; align-self: flex-end; border-bottom-right-radius: 0.2rem; margin-left: auto; }
   </style>
 </head>
 <body>
@@ -51,7 +51,7 @@
     </div>
 
     <div class="mb-3">
-      <label class="small text-muted mb-1">Lo que escucho (puedes editarlo):</label>
+      <label class="small text-muted mb-1">Tu respuesta (puedes editarla):</label>
       <textarea id="transcriptPreview" class="form-control" rows="3" placeholder="Presiona el micro y habla..."></textarea>
     </div>
 
@@ -62,10 +62,8 @@
   </div>
 
   <script>
-    // ==========================================
-    // CONFIGURACIÓN Y PUENTE
-    // ==========================================
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxMFEkp8wzKky0sXvtVQOaWf_5Z7XbQePkYR2tGy4d-AbeU1XfKw1ccytNzG_bjVEE8/exec";
+    // URL DE TU APP (Sigue siendo la misma)
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlhOsReh6kt1Q4YYxjTnaXt3o6GFz4ti_J_Vv0YhH-MIt_4hLvP2s3yjOHrbMExP_S/exec";
     let currentUserId = "";
 
     async function callBackend(payload) {
@@ -77,14 +75,11 @@
         });
         return await response.json();
       } catch (error) {
-        console.error("Error de conexión:", error);
-        return { success: false, error: "Fallo al conectar con el servidor." };
+        console.error("Error:", error);
+        return { success: false, error: "Fallo de conexión." };
       }
     }
 
-    // ==========================================
-    // LÓGICA DE INTERFAZ
-    // ==========================================
     async function handleLogin() {
       const userId = document.getElementById('userId').value.trim().toUpperCase();
       if (userId.length < 5) return alert("Código incompleto.");
@@ -95,7 +90,7 @@
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById(res.step).style.display = 'block';
       } else {
-        alert(res ? res.error : "Error desconocido.");
+        alert(res ? res.error : "Error.");
         toggleLoader('login', false);
       }
     }
@@ -114,7 +109,7 @@
         document.getElementById('basicDataSection').style.display = 'none';
         document.getElementById('academicSection').style.display = 'block';
       } else {
-        alert(res ? res.error : "Error al guardar.");
+        alert(res ? res.error : "Error.");
         toggleLoader('save', false);
       }
     }
@@ -124,79 +119,54 @@
       document.getElementById(type === 'login' ? 'btnLogin' : 'btnSave').disabled = show;
     }
 
-    // ==========================================
-    // LÓGICA DEL MICRÓFONO
-    // ==========================================
+    // --- LÓGICA DE VOZ ---
     let recognition;
     let isListening = false;
-
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SpeechRecognition();
       recognition.lang = 'es-CO';
       recognition.continuous = true;
       recognition.interimResults = true;
-
       recognition.onresult = (event) => {
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             document.getElementById('transcriptPreview').value += event.results[i][0].transcript + " ";
           }
         }
-        const preview = document.getElementById('transcriptPreview').value;
-        document.getElementById('btnSendAcademic').disabled = preview.trim().length < 5;
-      };
-
-      recognition.onerror = (event) => {
-        console.error("Error de reconocimiento: ", event.error);
+        document.getElementById('btnSendAcademic').disabled = document.getElementById('transcriptPreview').value.trim().length < 5;
       };
     }
 
     async function toggleMic() {
-      const btn = document.getElementById('btnMic');
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
-      } catch (err) {
-        alert("Permite el acceso al micrófono en el candadito (🔒).");
-        return;
-      }
-
+        stream.getTracks().forEach(t => t.stop());
+      } catch (e) { return alert("Permite el micro."); }
       if (!isListening) {
-        try {
-          recognition.start();
-          isListening = true;
-          btn.innerHTML = "🛑 Detener";
-          btn.classList.replace('btn-outline-danger', 'btn-danger');
-        } catch (e) { console.log("Ya escuchando"); }
+        recognition.start();
+        isListening = true;
+        document.getElementById('btnMic').innerHTML = "🛑 Detener";
+        document.getElementById('btnMic').classList.replace('btn-outline-danger', 'btn-danger');
       } else {
         recognition.stop();
         isListening = false;
-        btn.innerHTML = "🎙️ Hablar";
-        btn.classList.replace('btn-danger', 'btn-outline-danger');
+        document.getElementById('btnMic').innerHTML = "🎙️ Hablar";
+        document.getElementById('btnMic').classList.replace('btn-danger', 'btn-outline-danger');
       }
     }
 
     async function handleAcademicData() {
       const texto = document.getElementById('transcriptPreview').value.trim();
-      if (texto.length < 5) return;
-
       const btn = document.getElementById('btnSendAcademic');
       btn.disabled = true;
-      btn.innerHTML = 'Enviando...';
-
       const res = await callBackend({ action: "saveAcademic", userId: currentUserId, rawText: texto });
-
       if (res && res.success) {
         const chat = document.getElementById('chatWindow');
         chat.innerHTML += `<div class="bubble bubble-user">${texto}</div>`;
-        chat.innerHTML += `<div class="bubble bubble-bot"><strong>SinCamello:</strong> ¡Entendido! Ya guardé eso. ¿Hay algo más de tus estudios o pasamos a tu experiencia laboral?</div>`;
+        chat.innerHTML += `<div class="bubble bubble-bot"><strong>SinCamello:</strong> ¡Entendido! Ya guardé eso. ¿Pasamos a tu experiencia laboral?</div>`;
         chat.scrollTop = chat.scrollHeight;
         document.getElementById('transcriptPreview').value = "";
-        btn.innerHTML = "Enviar a la IA";
-        btn.disabled = false;
-      } else {
-        alert("Fallo al guardar.");
         btn.disabled = false;
       }
     }

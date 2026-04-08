@@ -41,7 +41,7 @@
     <div id="saveLoader" class="loader text-center"><div class="spinner-border text-success"></div></div>
   </div>
 
-  <div id="academicSection" class="card-custom" style="display: none;">
+   <div id="academicSection" class="card-custom" style="display: none;">
     <h3 class="text-center fw-bold mb-3">Asistente de Perfil</h3>
     
     <div id="chatWindow" class="chat-container mb-3">
@@ -52,15 +52,16 @@
 
     <div class="mb-3">
       <label class="small text-muted mb-1">Tu respuesta (puedes editarla):</label>
-      <textarea id="transcriptPreview" class="form-control" rows="3" placeholder="Presiona el micro y habla..."
-      oninput="checkTextLenght()"></textarea>
-    </div>
+      
+      <textarea id="transcriptPreview" class="form-control" rows="3" placeholder="Presiona el micro..." oninput="checkTextLength()"></textarea>
+      </div>
 
     <div class="d-flex gap-2 mb-2">
       <button id="btnMic" onclick="toggleMic()" class="btn btn-outline-danger w-100 fw-bold">🎙️ Hablar</button>
     </div>
     <button id="btnSendAcademic" onclick="handleAcademicData()" class="btn btn-main w-100" disabled>Enviar a la IA</button>
   </div>
+
 
   <script>
     // URL DE TU APP (Sigue siendo la misma)
@@ -120,91 +121,76 @@
       document.getElementById(type === 'login' ? 'btnLogin' : 'btnSave').disabled = show;
     }
     
-       // ==========================================
-    // LÓGICA DE VOZ - MODO CONTINUO (ANTI-SILENCIOS)
+        // ==========================================
+    // LÓGICA DE VOZ - MODO "GRABADORA"
     // ==========================================
     let recognition;
     let isListening = false;
-
-    // Función para activar/desactivar el botón mágicamente
-    function checkTextLength() {
-      const text = document.getElementById('transcriptPreview').value.trim();
-      document.getElementById('btnSendAcademic').disabled = text.length < 5;
-    }
+    let audioBuffer = ""; // Aquí guardaremos lo que digas en secreto
 
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SpeechRecognition();
       recognition.lang = 'es-CO';
-      recognition.continuous = true;
-      recognition.interimResults = false; // Modo sin eco
+      recognition.continuous = true; // Permite pausas largas
+      recognition.interimResults = false; // No muestra texto hasta que termine
 
       recognition.onstart = () => {
-        document.getElementById('transcriptPreview').placeholder = "🎤 Escuchando... (Tómate tu tiempo para pensar)";
+        document.getElementById('transcriptPreview').placeholder = "🎤 Grabando... puedes pausar y seguir hablando.";
       };
 
       recognition.onresult = (event) => {
-        let transcript = "";
+        // Acumulamos el texto en el buffer interno sin mostrarlo aún
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            transcript += event.results[i][0].transcript + " ";
+            audioBuffer += event.results[i][0].transcript + " ";
           }
         }
-        
-        if (transcript.length > 0) {
-            const preview = document.getElementById('transcriptPreview');
-            // Añadimos el texto cuidando los espacios
-            if (preview.value.length > 0 && !preview.value.endsWith(" ")) {
-                preview.value += " ";
-            }
-            preview.value += transcript;
-            checkTextLength(); // Desbloqueamos el botón si ya hay texto
-        }
       };
 
-      // ¡EL TRUCO DE MAGIA PARA QUE NO SE APAGUE SOLO!
+      // Si el navegador apaga el micro por silencio, lo volvemos a prender en silencio
       recognition.onend = () => {
         if (isListening) {
-          // Si el usuario NO ha presionado detener, pero el micro se apagó por silencio...
-          // ¡Lo volvemos a encender en fracción de segundo!
           try { recognition.start(); } catch(e) {}
-        } else {
-          // Apagado manual real (el usuario presionó Detener)
-          const btn = document.getElementById('btnMic');
-          btn.innerHTML = "🎙️ Hablar";
-          btn.classList.replace('btn-danger', 'btn-outline-danger');
-          document.getElementById('transcriptPreview').placeholder = "Presiona el micro y habla...";
-          checkTextLength(); // Revisamos el botón una última vez
-        }
-      };
-
-      recognition.onerror = (event) => {
-        console.error("Error de voz: ", event.error);
-        // Solo apagamos si fue un error grave de permisos
-        if (event.error === 'not-allowed' || event.error === 'audio-capture') {
-            isListening = false;
         }
       };
     }
 
     async function toggleMic() {
       const btn = document.getElementById('btnMic');
+      const preview = document.getElementById('transcriptPreview');
 
       if (!isListening) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           stream.getTracks().forEach(t => t.stop());
           
-          isListening = true; // Declaramos la intención de escuchar
+          audioBuffer = ""; // Limpiamos buffer previo
           recognition.start();
+          isListening = true;
           btn.innerHTML = "🛑 Detener grabación";
           btn.classList.replace('btn-outline-danger', 'btn-danger');
         } catch (e) { alert("Permite el acceso al micrófono."); }
       } else {
-        isListening = false; // Declaramos la intención de detener
-        recognition.stop();  // Esto disparará onend y apagará todo limpiamente
+        // AQUÍ ES CUANDO DETIENES
+        recognition.stop();
+        isListening = false;
+        
+        // VOLCAMOS EL BUFFER A LA PANTALLA
+        preview.value = audioBuffer.trim();
+        checkTextLength(); // Activamos el botón enviar
+        
+        btn.innerHTML = "🎙️ Hablar";
+        btn.classList.replace('btn-danger', 'btn-outline-danger');
+        preview.placeholder = "Grabación terminada. Puedes editar el texto...";
       }
     }
+
+    function checkTextLength() {
+      const text = document.getElementById('transcriptPreview').value.trim();
+      document.getElementById('btnSendAcademic').disabled = text.length < 5;
+    }
+
     
   </script>
 </body>

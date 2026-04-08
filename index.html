@@ -1,98 +1,257 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <base target="_top">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <!-- El viewport cover asegura que no haya zoom indeseado al tocar inputs en iOS/Android -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SinCamello IA</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background: #f0f2f5; height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', sans-serif; padding: 10px; }
-    
-    .card-custom { 
-      background: white; 
-      padding: 1.5rem; 
-      border-radius: 1.5rem; 
-      box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
-      width: 100%; 
-      max-width: 450px; 
-      height: 90vh; /* Un alto más seguro para no chocar con las barras del celular */
+    :root {
+      --primary-color: #1abc9c;
+      --primary-hover: #16a085;
+      --bg-body: #d1d5db;
+      --bg-app: #ffffff;
+      --bg-chat: #f0f2f5;
+      --msg-user: #1abc9c;
+      --msg-bot: #ffffff;
+      --text-main: #333333;
+    }
+
+    /* Reset y ajuste para móviles (evita saltos de pantalla) */
+    body { 
+      background: var(--bg-body); 
+      margin: 0; 
+      /* Usamos dvh (Dynamic Viewport Height) para adaptar a barras de navegadores móviles */
+      height: 100dvh; 
       display: flex; 
-      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      font-family: 'Segoe UI', system-ui, sans-serif; 
     }
     
-    .btn-main { background: #1abc9c; border: none; padding: 0.8rem; color: white; font-weight: 600; transition: 0.3s; }
-    .btn-main:hover { background: #16a085; transform: translateY(-2px); }
-    .form-control { border-radius: 0.8rem; padding: 0.7rem; }
-    .loader { display: none; margin-top: 1rem; }
+    /* Contenedor principal estilo "App Nativa" */
+    .app-container { 
+      background: var(--bg-app); 
+      width: 100%; 
+      max-width: 480px; 
+      height: 100dvh; 
+      display: flex; 
+      flex-direction: column; 
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* En pantallas más grandes (PC/Tablets), le damos bordes para que parezca un teléfono */
+    @media (min-width: 481px) {
+      .app-container {
+        height: 90dvh;
+        border-radius: 1.5rem;
+      }
+    }
+
+    /* Secciones (Pantallas) */
+    .screen {
+      display: none; /* Ocultas por defecto */
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    /* Pantallas de Login y Formularios: Contenido centrado */
+    .screen-centered {
+      justify-content: center;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     
-    /* CHAT CONTAINER: Toma el espacio disponible pero con límites */
-    .chat-container { 
+    /* Botones y Formularios generales */
+    .btn-main { background: var(--primary-color); border: none; padding: 0.9rem; color: white; font-weight: 600; border-radius: 0.8rem; transition: 0.2s; }
+    .btn-main:hover { background: var(--primary-hover); transform: translateY(-2px); color: white; }
+    .btn-main:disabled { background: #9ca3af; transform: none; }
+    .form-control { border-radius: 0.8rem; padding: 0.8rem 1rem; border: 1px solid #ced4da; background: #f8f9fa;}
+    .form-control:focus { border-color: var(--primary-color); box-shadow: 0 0 0 0.25rem rgba(26, 188, 156, 0.25); background: white;}
+    
+    .loader { display: none; margin-top: 1rem; text-align: center; }
+    
+    /* ==========================================
+       DISEÑO ESPECÍFICO DEL CHAT (INTERFAZ IA)
+       ========================================== */
+    .chat-header {
+      background: white;
+      padding: 1rem;
+      text-align: center;
+      font-weight: bold;
+      border-bottom: 1px solid #eaeaea;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+      z-index: 10;
+    }
+
+    .chat-area { 
       flex-grow: 1; 
       overflow-y: auto; 
-      border-radius: 1rem; 
-      background: #f8f9fa; 
-      padding: 15px; 
-      border: 1px solid #dee2e6; 
+      background: var(--bg-chat); 
+      padding: 1.5rem 1rem; 
       display: flex; 
       flex-direction: column; 
-      margin-bottom: 15px;
+      gap: 0.8rem;
     }
     
-    .bubble { padding: 10px 15px; border-radius: 1.2rem; margin-bottom: 10px; max-width: 85%; font-size: 0.9rem; line-height: 1.4; }
-    .bubble-bot { background: #e9ecef; color: #333; align-self: flex-start; border-bottom-left-radius: 0.2rem; }
-    .bubble-user { background: #1abc9c; color: white; align-self: flex-end; border-bottom-right-radius: 0.2rem; margin-left: auto; }
+    .bubble { 
+      padding: 0.8rem 1.2rem; 
+      border-radius: 1.2rem; 
+      max-width: 85%; 
+      font-size: 0.95rem; 
+      line-height: 1.4; 
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      position: relative;
+    }
+    .bubble-bot { 
+      background: var(--msg-bot); 
+      color: var(--text-main); 
+      align-self: flex-start; 
+      border-bottom-left-radius: 0.3rem; 
+    }
+    .bubble-user { 
+      background: var(--msg-user); 
+      color: white; 
+      align-self: flex-end; 
+      border-bottom-right-radius: 0.3rem; 
+    }
     
-    /* ZONA DE INPUT BLINDADA CONTRA APLASTAMIENTOS */
-    .input-area { flex-shrink: 0; display: flex; gap: 0.5rem; }
-    .input-area textarea { flex-grow: 1; margin-bottom: 0; resize: none; }
-    .input-buttons { display: flex; flex-direction: column; gap: 0.5rem; }
+    /* Barra de entrada anclada al fondo */
+    .input-wrapper { 
+      background: white; 
+      padding: 0.8rem; 
+      display: flex; 
+      gap: 0.5rem; 
+      align-items: flex-end;
+      border-top: 1px solid #eaeaea;
+      padding-bottom: calc(0.8rem + env(safe-area-inset-bottom)); /* Soporte para iPhone notch */
+    }
     
-    .btn-square { width: 55px; height: 50px; border-radius: 0.8rem; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; padding: 0; transition: all 0.2s; }
+    .input-wrapper textarea { 
+      flex-grow: 1; 
+      margin-bottom: 0; 
+      resize: none; 
+      border-radius: 1.2rem;
+      background: #f1f3f4;
+      border: 1px solid transparent;
+      padding: 0.7rem 1rem;
+      max-height: 120px;
+      line-height: 1.4;
+    }
+
+    .input-wrapper textarea:focus {
+      background: white;
+      border-color: #ccc;
+    }
+    
+    .action-buttons { 
+      display: flex; 
+      flex-direction: row; 
+      gap: 0.5rem; 
+    }
+    
+    .btn-circle { 
+      width: 48px; 
+      height: 48px; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 1.3rem; 
+      padding: 0; 
+      border: none;
+      transition: all 0.2s; 
+    }
+    .btn-send { background: var(--primary-color); color: white; }
+    .btn-send:disabled { background: #d1d5db; color: #9ca3af; }
+    .btn-mic-idle { background: #f8d7da; color: #dc3545; }
+    .btn-mic-active { background: #dc3545; color: white; animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
   </style>
 </head>
 <body>
 
-  <div id="loginSection" class="card-custom text-center justify-content-center" style="min-height: auto;">
-    <h2 class="fw-bold">SinCamello.com</h2>
-    <p class="text-muted">Ingresa tu código Beta</p>
-    <input type="text" id="userId" class="form-control text-center fw-bold" placeholder="EJ: XJ72K" maxlength="5">
-    <button onclick="handleLogin()" id="btnLogin" class="btn btn-main w-100">Entrar al Sistema</button>
-    <div id="loginLoader" class="loader"><div class="spinner-border text-success"></div></div>
-  </div>
-
-  <div id="basicDataSection" class="card-custom" style="display: none; min-height: auto;">
-    <h2 class="text-center fw-bold">¡Bienvenido!</h2>
-    <p class="text-center text-muted small mb-4">Completa tu perfil básico</p>
-    <input type="text" id="nombres" class="form-control" placeholder="Nombres">
-    <input type="text" id="apellidos" class="form-control" placeholder="Apellidos">
-    <input type="tel" id="telefono" class="form-control" placeholder="Teléfono / WhatsApp">
-    <input type="email" id="email" class="form-control" placeholder="Correo electrónico">
-    <input type="text" id="ciudad" class="form-control" placeholder="Ciudad">
-    <button onclick="handleSaveData()" id="btnSave" class="btn btn-main w-100">Guardar y Continuar</button>
-    <div id="saveLoader" class="loader text-center"><div class="spinner-border text-success"></div></div>
-  </div>
-
-  <div id="academicSection" class="card-custom" style="display: none;">
-    <h3 class="text-center fw-bold mb-3">SinCamello IA</h3>
+  <div class="app-container">
     
-    <div id="chatWindow" class="chat-container mb-3">
-      <div class="bubble bubble-bot">
-        <strong>SinCamello:</strong> ¡Excelente! Ahora cuéntame sobre tus estudios. ¿Qué estudiaste, dónde y en qué fechas?
+    <!-- SECCIÓN: LOGIN -->
+    <div id="loginSection" class="screen screen-centered" style="display: flex;">
+      <div class="text-center mb-4">
+        <h2 class="fw-bold" style="color: var(--primary-color);">SinCamello.com</h2>
+        <p class="text-muted">Ingresa tu código Beta para iniciar</p>
+      </div>
+      <div class="d-flex flex-column gap-3">
+        <input type="text" id="userId" class="form-control text-center fw-bold fs-5" placeholder="EJ: XJ72K" maxlength="5">
+        <button onclick="handleLogin()" id="btnLogin" class="btn btn-main w-100">Entrar al Sistema</button>
+      </div>
+      <div id="loginLoader" class="loader"><div class="spinner-border text-success"></div></div>
+    </div>
+
+    <!-- SECCIÓN: DATOS BÁSICOS -->
+    <div id="basicDataSection" class="screen screen-centered">
+      <div class="text-center mb-4">
+        <h2 class="fw-bold">¡Bienvenido!</h2>
+        <p class="text-muted small">Completa tu perfil básico</p>
+      </div>
+      <div class="d-flex flex-column gap-3">
+        <input type="text" id="nombres" class="form-control" placeholder="Nombres">
+        <input type="text" id="apellidos" class="form-control" placeholder="Apellidos">
+        <input type="tel" id="telefono" class="form-control" placeholder="Teléfono / WhatsApp">
+        <input type="email" id="email" class="form-control" placeholder="Correo electrónico">
+        <input type="text" id="ciudad" class="form-control" placeholder="Ciudad">
+        <button onclick="handleSaveData()" id="btnSave" class="btn btn-main w-100 mt-2">Guardar y Continuar</button>
+      </div>
+      <div id="saveLoader" class="loader"><div class="spinner-border text-success"></div></div>
+    </div>
+
+    <!-- SECCIÓN: CHAT ACADÉMICO -->
+    <div id="academicSection" class="screen">
+      <div class="chat-header">
+        <span style="color: var(--primary-color);">🤖</span> SinCamello IA
+      </div>
+      
+      <div id="chatWindow" class="chat-area">
+        <div class="bubble bubble-bot">
+          <strong>SinCamello:</strong> ¡Excelente! Ahora cuéntame sobre tus estudios. ¿Qué estudiaste, dónde y en qué fechas?
+        </div>
+      </div>
+
+      <div class="input-wrapper">
+        <textarea id="transcriptPreview" rows="1" placeholder="Escribe o usa el micrófono..." oninput="autoResizeTextarea(this); checkTextLength()"></textarea>
+        
+        <div class="action-buttons">
+          <button id="btnMic" onclick="toggleMic()" class="btn-circle btn-mic-idle" title="Hablar / Pausar">🎙️</button>
+          <button id="btnSendAcademic" onclick="handleAcademicData()" class="btn-circle btn-send" title="Enviar a la IA" disabled>➤</button>
+        </div>
       </div>
     </div>
 
-    <div class="input-area">
-      <textarea id="transcriptPreview" class="form-control" rows="2" placeholder="Presiona el micro y habla..." oninput="checkTextLength()"></textarea>
-      
-      <div class="input-buttons">
-        <button id="btnMic" onclick="toggleMic()" class="btn btn-outline-danger btn-square" title="Hablar / Pausar">🎙️</button>
-        <button id="btnSendAcademic" onclick="handleAcademicData()" class="btn btn-main btn-square" title="Enviar a la IA" disabled>➤</button>
-      </div>
-    </div>
   </div>
 
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxo5fuunAcNokTVEMbHFbipZfpsFllwOlom79NIARDZX2gmWX4v11vy9ys3UJLgQ31E/exec";
     let currentUserId = "";
+
+    // Navegación entre pantallas (Ajustado a flex)
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+      document.getElementById(screenId).style.display = 'flex';
+    }
 
     async function callBackend(payload) {
       try {
@@ -115,8 +274,8 @@
       const res = await callBackend({ action: "setup", userId: userId });
       if (res && res.success) {
         currentUserId = userId;
-        document.getElementById('loginSection').style.display = 'none';
-        document.getElementById(res.step).style.display = 'block';
+        // Muestra la pantalla que devuelve el backend
+        showScreen(res.step);
       } else {
         alert(res ? res.error : "Error.");
         toggleLoader('login', false);
@@ -134,8 +293,7 @@
       toggleLoader('save', true);
       const res = await callBackend({ action: "saveBasic", userId: currentUserId, data: data });
       if (res && res.success) {
-        document.getElementById('basicDataSection').style.display = 'none';
-        document.getElementById('academicSection').style.display = 'block';
+        showScreen('academicSection');
       } else {
         alert(res ? res.error : "Error.");
         toggleLoader('save', false);
@@ -148,15 +306,31 @@
     }
     
     // ==========================================
-    // LÓGICA DE VOZ - MODO WALKIE-TALKIE (ESTABLE)
+    // UTILIDADES DE UI DEL CHAT
     // ==========================================
-    let recognition;
-    let isListening = false;
+    
+    // Hace que el textarea crezca automáticamente hasta un límite
+    function autoResizeTextarea(element) {
+      element.style.height = 'auto';
+      element.style.height = (element.scrollHeight) + 'px';
+      if(element.value === '') element.style.height = 'auto'; // Reset si está vacío
+    }
 
     function checkTextLength() {
       const text = document.getElementById('transcriptPreview').value.trim();
       document.getElementById('btnSendAcademic').disabled = text.length < 5;
     }
+
+    function scrollToBottom() {
+      const chat = document.getElementById('chatWindow');
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    // ==========================================
+    // LÓGICA DE VOZ - MODO WALKIE-TALKIE
+    // ==========================================
+    let recognition;
+    let isListening = false;
 
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -166,7 +340,7 @@
       recognition.interimResults = false; 
 
       recognition.onstart = () => {
-        document.getElementById('transcriptPreview').placeholder = "🎤 Escuchando... (Añadiendo a tu respuesta)";
+        document.getElementById('transcriptPreview').placeholder = "Escuchando... 🎤";
       };
 
       recognition.onresult = (event) => {
@@ -183,6 +357,7 @@
                 preview.value += " ";
             }
             preview.value += transcript;
+            autoResizeTextarea(preview);
             checkTextLength();
         }
       };
@@ -190,10 +365,10 @@
       recognition.onend = () => {
         isListening = false;
         const btn = document.getElementById('btnMic');
-        // Solo cambiamos el ícono en lugar de meter texto largo para que se mantenga cuadrado
         btn.innerHTML = "🎙️"; 
-        btn.classList.replace('btn-danger', 'btn-outline-danger');
-        document.getElementById('transcriptPreview').placeholder = "Puedes editar el texto o seguir hablando...";
+        btn.classList.remove('btn-mic-active');
+        btn.classList.add('btn-mic-idle');
+        document.getElementById('transcriptPreview').placeholder = "Escribe o usa el micrófono...";
         checkTextLength();
       };
 
@@ -213,9 +388,9 @@
           
           recognition.start();
           isListening = true;
-          // Solo el ícono de Stop para el botón cuadrado
           btn.innerHTML = "🛑";
-          btn.classList.replace('btn-outline-danger', 'btn-danger');
+          btn.classList.remove('btn-mic-idle');
+          btn.classList.add('btn-mic-active');
         } catch (e) { alert("Permite el acceso al micrófono."); }
       } else {
         recognition.stop();
@@ -226,23 +401,27 @@
     // ENVÍO DE DATOS
     // ==========================================
     async function handleAcademicData() {
-      const texto = document.getElementById('transcriptPreview').value.trim();
+      const inputEl = document.getElementById('transcriptPreview');
+      const texto = inputEl.value.trim();
       const btn = document.getElementById('btnSendAcademic');
+      const chat = document.getElementById('chatWindow');
       
       btn.disabled = true;
-      // Usamos un ícono de reloj de arena para no desarmar el botón cuadrado
       btn.innerHTML = '⏳';
 
       const res = await callBackend({ action: "saveAcademic", userId: currentUserId, rawText: texto });
 
       if (res && res.success) {
-        const chat = document.getElementById('chatWindow');
+        // Imprime el mensaje del usuario
         chat.innerHTML += `<div class="bubble bubble-user">${texto}</div>`;
+        // Imprime respuesta de la IA
         chat.innerHTML += `<div class="bubble bubble-bot"><strong>SinCamello:</strong> ¡Perfecto! Ya lo guardé. ¿Hay algo más que quieras añadir?</div>`;
-        chat.scrollTop = chat.scrollHeight;
         
-        document.getElementById('transcriptPreview').value = "";
-        btn.innerHTML = "➤"; // Vuelve a la flechita
+        scrollToBottom();
+        
+        inputEl.value = "";
+        autoResizeTextarea(inputEl); // Resetea el tamaño de la barra
+        btn.innerHTML = "➤"; 
         checkTextLength(); 
       } else {
         alert("Fallo al guardar en la base de datos.");
@@ -253,3 +432,5 @@
   </script>
 </body>
 </html>
+
+```

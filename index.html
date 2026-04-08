@@ -142,7 +142,7 @@
     <div id="loginSection" class="screen screen-centered" style="display: flex;">
       <h2 class="fw-bold text-center mb-1" style="color: var(--primary);">SinCamello.com</h2>
       <p class="text-center text-muted mb-4 small text-uppercase">Acceso Beta Privado</p>
-      <input type="text" id="userId" class="form-control text-center fw-bold fs-4" placeholder="CÓDIGO" maxlength="5">
+      <input type="text" id="userId" class="form-control text-center fw-bold fs-4" placeholder="Introduce tu Código" maxlength="5">
       <button onclick="handleLogin()" id="btnLogin" class="btn btn-main">Entrar</button>
       <div id="loginLoader" class="loader"><div class="spinner-border text-success spinner-border-sm"></div></div>
     </div>
@@ -152,7 +152,7 @@
       <h3 class="fw-bold text-center mb-4">Tu Perfil</h3>
       <input type="text" id="nombres" class="form-control" placeholder="Nombres">
       <input type="text" id="apellidos" class="form-control" placeholder="Apellidos">
-      <input type="tel" id="telefono" class="form-control" placeholder="Teléfon / WhatsApp">
+      <input type="tel" id="telefono" class="form-control" placeholder="Teléfono / WhatsApp">
       <input type="email" id="email" class="form-control" placeholder="Correo">
       <input type="text" id="ciudad" class="form-control" placeholder="Ciudad">
       <button onclick="handleSaveData()" id="btnSave" class="btn btn-main">Comenzar</button>
@@ -164,7 +164,7 @@
       <div class="chat-header">SinCamello Mentor 🤖</div>
       <div id="chatWindow" class="chat-window">
         <div class="bubble bubble-bot">
-          <strong>Mentor:</strong> ¡Qué alegría tenerte aquí! Cuéntame, ¿qué has estudiado últimamente? (Título, lugar y fechas).
+          <strong>Mentor:</strong> Hola, ¿Como estás?, Me presento, mi nombre es Mentor y voy a ser tu asistente durante tu búsqueda de empleo.
         </div>
       </div>
       <div class="input-wrapper">
@@ -180,7 +180,7 @@
     /**
      * IMPORTANTE: Mantén actualizada esta URL con la última versión de tu Apps Script implementada
      */
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby0u1XBhYQeIgs4GnACGLPdWSszxTwAww9atp6-G5FmxgHdxkpaATtn4C4gtWXQ2q8/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyBDZZD22u-Y8pgPv13793BJotjCFx8XB-mMAgwht96koTP6ORFc-_k0LsqSe-ejtlo/exec";
     let currentId = "";
 
     function showScreen(id) {

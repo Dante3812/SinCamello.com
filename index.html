@@ -183,6 +183,7 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwA__DuWXNI6oZEKDblR0b5qfQSED4xWqTw_F5UpivWBELwUQQ9w8HQdJB2fVPheome/exec";
     let currentId = "";
     let userName = "";
+    let lastUserMessage = "";
 
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
@@ -281,6 +282,7 @@
     async function sendToIA() {
       const input = document.getElementById('transcriptPreview');
       const text = input.value.trim();
+      lastUserMessage = text
       if(!text) return;
 
       const chat = document.getElementById('chatWindow');
@@ -307,7 +309,7 @@
       if(tempElement) tempElement.remove();
 
       // 4. Mostrar respuesta IA (viniendo de Gemini 2.5)
-      const msg = res.success ? res.msg : "He guardado la nota, pero tengo problemas para responderte ahora. Cuéntame algo más de tus estudios.";
+      const msg = res.success ? res.msg : ;
       chat.innerHTML += `<div class="bubble bubble-bot">${msg}</div>`;
       
       btn.innerHTML = "➤"; 

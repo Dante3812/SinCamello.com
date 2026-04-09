@@ -388,7 +388,7 @@
       scrollChat();
 
       // 3. Llamar Backend
-      const res = await call({ action: "saveAcademic", userId: currentId, rawText: text });
+      const res = await call({ action: "saveUserData", userId: currentId, rawText: text });
       
       const tempElement = document.getElementById(tempId);
       if(tempElement) tempElement.remove();

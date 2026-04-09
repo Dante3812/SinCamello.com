@@ -164,7 +164,7 @@
       <div class="chat-header">🤖 SinCamello IA</div>
       <div id="chatWindow" class="chat-window">
         <div class="bubble bubble-bot">
-          <strong>Jimmy:</strong> Hola, ¿Cómo estás?, me presento, soy Jimmy y estoy acá para ayudarte en tu proceso de búsqueda de empleo.
+          <strong>Jimmy:</strong> Hola, ¿Cómo estás?, me presento, soy Jimmy y estoy listo para que armemos tu perfil profesional.
         </div>
       </div>
       <div class="input-wrapper">
@@ -182,6 +182,7 @@
      */
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwA__DuWXNI6oZEKDblR0b5qfQSED4xWqTw_F5UpivWBELwUQQ9w8HQdJB2fVPheome/exec";
     let currentId = "";
+    let username = "";
 
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
@@ -228,8 +229,9 @@
     }
 
     async function handleSaveData() {
+      username = document.getElementById('nombres').value.trim();
       const data = {
-        nombres: document.getElementById('nombres').value,
+        nombres: username,
         apellidos: document.getElementById('apellidos').value,
         telefono: document.getElementById('telefono').value,
         email: document.getElementById('email').value,
@@ -245,6 +247,12 @@
       const res = await call({ action: "saveBasic", userId: currentId, data });
       
       if(res.success) {
+        const chatWindow = document.getElementByid('chatWindow')
+        chatWindow.innerHTML = `
+          <div class="bubble bubble-bot">
+            <strong>Jimmy:</strong> ¡Hola ${userName}! Qué gusto saludarte. Soy Jimmy, tu asistente IA y estoy listo para que armemos ese perfil profesional.
+          </div>
+        `;
         showScreen('academicSection');
       } else {
         alert("Hubo un problema al guardar tus datos.");

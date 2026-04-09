@@ -182,7 +182,7 @@
      */
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwA__DuWXNI6oZEKDblR0b5qfQSED4xWqTw_F5UpivWBELwUQQ9w8HQdJB2fVPheome/exec";
     let currentId = "";
-    let username = "";
+    let userName = "";
 
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
@@ -229,9 +229,9 @@
     }
 
     async function handleSaveData() {
-      username = document.getElementById('nombres').value.trim();
+      userName = document.getElementById('nombres').value.trim();
       const data = {
-        nombres: username,
+        nombres: userName,
         apellidos: document.getElementById('apellidos').value,
         telefono: document.getElementById('telefono').value,
         email: document.getElementById('email').value,
@@ -252,8 +252,9 @@
           <div class="bubble bubble-bot">
             <strong>Jimmy:</strong> ¡Hola ${userName}! Qué gusto saludarte. Soy Jimmy, tu asistente IA y estoy listo para que armemos ese perfil profesional.
           </div>
-        `;
+          `;
         showScreen('academicSection');
+        
       } else {
         alert("Hubo un problema al guardar tus datos.");
         document.getElementById('saveLoader').style.display = 'none';

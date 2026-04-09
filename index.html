@@ -53,7 +53,7 @@
 
      #loginSection {
       justify-content: flex-start !important; 
-      padding-top: 15%; 
+      padding-top: 20%; 
     }
 
     #loginSection h2 {
@@ -61,9 +61,15 @@
       margin-bottom: 1.2rem !important; /* Espacio hacia los emojis */
     }
 
+    #loginSection p {
+      font-style: italic; /* ¡Aquí queda en cursiva! */
+      color: #9ca3af;    /* Un gris un poquito más claro para que no compita */
+      margin-bottom: 2.5rem !important; /* Espacio antes de llegar al código de acceso */
+    }
+
     .custom-subtitle {
       font-size: 1rem; 
-      margin-bottom: 7rem; /* Ajusta este espacio según necesites */
+      margin-bottom: 5rem; /* Ajusta este espacio según necesites */
       text-align: center;
       color: #6b7280; /* Un gris suave que queda muy profesional */
       font-weight: 500;
@@ -169,7 +175,7 @@
     <div id="loginSection" class="screen screen-centered" style="display: flex;">
       <h2 class="fw-bold text-center mb-1" style="color: var(--primary);">SinCamello.com</h2>
       <div class="text-center custom-subtitle">Asistencia IA para búsqueda de empleo</div>
-      <p class="text-center text-muted mb-4 small">Acceso previo versión Beta</p>
+      <p class="text-center text-muted mb-4 small">*Acceso previo versión Beta</p>
       <input type="text" id="userId" class="form-control text-center fw-bold fs-4" placeholder="Código de acceso" maxlength="5">
       <button onclick="handleLogin()" id="btnLogin" class="btn btn-main">Entrar</button>
       <div id="loginLoader" class="loader"><div class="spinner-border text-success spinner-border-sm"></div></div>

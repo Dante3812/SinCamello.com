@@ -99,12 +99,27 @@
     
     /* Chat UI */
     .chat-header {
-      padding: 1rem;
+      padding: 0.8rem 1.2rem; /* Un poquito más de aire */
       text-align: center;
       font-weight: bold;
       border-bottom: 1px solid #eee;
       background: white;
       z-index: 5;
+      display: flex; /* ESTO ES LO CLAVE PARA EL BOTÓN */
+      justify-content: space-between; 
+      align-items: center;
+    }
+
+    /* El estilo del botón ponlo justo debajo del bloque anterior */
+    .btn-finalize {
+      background: #fef2f2; 
+      color: #ef4444;       
+      border: 1px solid #fee2e2;
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.6rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer; /* Para que salga la manito al pasar el mouse */
     }
 
     .chat-window { 
@@ -196,7 +211,9 @@
 
     <!-- CHAT (MÓDULO IA) -->
     <div id="academicSection" class="screen">
-      <div class="chat-header">🤖 SinCamello IA</div>
+      <div class="chat-header"><span>🐫 SinCamello IA</span>
+      <button onclick="handleFinalize()" class="btn-finalize">Finalizar</button>
+      </div>
       <div id="chatWindow" class="chat-window">
         <div class="bubble bubble-bot">
           Hola, ¿Cómo estás?, me presento, soy Jimmy y estoy listo para que armemos tu perfil profesional.
@@ -269,7 +286,7 @@
         cajaMensaje.style.opacity = 1;
         }, 500);
     
-      }, 5000);
+      }, 4000);
     }
 
 
@@ -382,6 +399,14 @@
       
       btn.innerHTML = "➤"; 
       scrollChat();
+    }
+
+    function handleFinalize() {
+      if(confirm("¿Seguro que terminamos? Esto enviará tus datos para generar el perfil.")) {
+      // Aquí es donde trabajaremos la lógica interna de "lo de lo de lo interno"
+      alert("¡Perfecto! Procesando tu información...");
+      // Ejemplo: call({ action: "finalize", userId: currentId });
+      }
     }
 
     // --- RECONOCIMIENTO DE VOZ ---

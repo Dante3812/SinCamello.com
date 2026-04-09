@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SinCamello IA - Mentor</title>
+  <title>SinCamello</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     :root {
@@ -140,9 +140,9 @@
     
     <!-- LOGIN -->
     <div id="loginSection" class="screen screen-centered" style="display: flex;">
-      <h2 class="fw-bold text-center mb-1" style="color: var(--primary);">SinCamello.com</h2>
-      <p class="text-center text-muted mb-4 small text-uppercase">Acceso Beta Privado</p>
-      <input type="text" id="userId" class="form-control text-center fw-bold fs-4" placeholder="Introduce tu Código" maxlength="5">
+      <h2 class="fw-bold text-center mb-1" style="color: var(--primary);">SinCamello</h2>
+      <p class="text-center text-muted mb-4 small text-uppercase">Acceso Beta Previo</p>
+      <input type="text" id="userId" class="form-control text-center fw-bold fs-4" placeholder="Código de acceso" maxlength="5">
       <button onclick="handleLogin()" id="btnLogin" class="btn btn-main">Entrar</button>
       <div id="loginLoader" class="loader"><div class="spinner-border text-success spinner-border-sm"></div></div>
     </div>
@@ -154,14 +154,14 @@
       <input type="text" id="apellidos" class="form-control" placeholder="Apellidos">
       <input type="tel" id="telefono" class="form-control" placeholder="Teléfono / WhatsApp">
       <input type="email" id="email" class="form-control" placeholder="Correo">
-      <input type="text" id="ciudad" class="form-control" placeholder="Ciudad">
+      <input type="text" id="ciudad" class="form-control" placeholder="Ciudad / Municipio">
       <button onclick="handleSaveData()" id="btnSave" class="btn btn-main">Comenzar</button>
       <div id="saveLoader" class="loader"><div class="spinner-border text-success spinner-border-sm"></div></div>
     </div>
 
     <!-- CHAT (MÓDULO IA) -->
     <div id="academicSection" class="screen">
-      <div class="chat-header">SinCamello IA 🤖</div>
+      <div class="chat-header">🤖 SinCamello IA</div>
       <div id="chatWindow" class="chat-window">
         <div class="bubble bubble-bot">
           <strong>Jimmy:</strong> Hola, ¿Cómo estás?, me presento, soy Jimmy y estoy acá para ayudarte en tu proceso de búsqueda de empleo.
@@ -288,7 +288,7 @@
       btn.innerHTML = "⏳"; 
       btn.disabled = true;
       const tempId = "t-" + Date.now();
-      chat.innerHTML += `<div id="${tempId}" class="bubble bubble-bot"><em>Mentor está analizando...</em></div>`;
+      chat.innerHTML += `<div id="${tempId}" class="bubble bubble-bot"><em>...</em></div>`;
       scrollChat();
 
       // 3. Llamar Backend
@@ -297,7 +297,7 @@
       const tempElement = document.getElementById(tempId);
       if(tempElement) tempElement.remove();
 
-      // 4. Mostrar respuesta IA (viniendo de Gemini 2.5/3.1)
+      // 4. Mostrar respuesta IA (viniendo de Gemini 2.5)
       const msg = res.success ? res.msg : "He guardado la nota, pero tengo problemas para responderte ahora. Cuéntame algo más de tus estudios.";
       chat.innerHTML += `<div class="bubble bubble-bot"><strong>Mentor:</strong> ${msg}</div>`;
       

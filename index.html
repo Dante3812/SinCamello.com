@@ -56,8 +56,13 @@
       padding-top: 15%; 
     }
 
+      #loginSection h2 {
+      font-size: 2.8rem !important; /* Título más grande */
+      margin-bottom: 1.2rem !important; /* Espacio hacia los emojis */
+    }
+
     .emoji-subtitle {
-      font-size: 1.5rem;
+      font-size: 1rem;
       margin-bottom: 5rem;
       display: block;
       text-align: center; /* Aseguramos que los emojis se centren */
@@ -162,7 +167,7 @@
     <!-- LOGIN -->
     <div id="loginSection" class="screen screen-centered" style="display: flex;">
       <h2 class="fw-bold text-center mb-1" style="color: var(--primary);">Sin Camello</h2>
-       <div class="text-center emoji-subtitle"><span style="display: inline-block; transform: scaleX(-1); font-size: 2rem;">🐫...          🏃🏼‍♀️💨</span></div>
+       <div class="text-center emoji-subtitle"><span style="display: inline-block; transform: scaleX(-1);">🐫...             🏃🏼‍♀️💨</span></div>
       <p class="text-center text-muted mb-4 small">Acceso previo versión Beta</p>
       <input type="text" id="userId" class="form-control text-center fw-bold fs-4" placeholder="Código de acceso" maxlength="5">
       <button onclick="handleLogin()" id="btnLogin" class="btn btn-main">Entrar</button>

@@ -51,6 +51,27 @@
       animation: fadeIn 0.4s ease-out;
     }
 
+      #loginSection {
+      justify-content: flex-start !important; 
+      padding-top: 15%; 
+    }
+
+    .emoji-subtitle {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      display: block;
+      text-align: center; /* Aseguramos que los emojis se centren */
+    }
+
+    #statusMessage {
+      margin-top: 15px;
+      font-style: italic;
+      color: #666;
+      min-height: 24px;
+      transition: opacity 0.5s ease;
+      text-align: center;
+    }
+
     .screen-centered { justify-content: center; padding: 2rem; overflow-y: auto; }
 
     @keyframes fadeIn {
@@ -140,16 +161,18 @@
     
     <!-- LOGIN -->
     <div id="loginSection" class="screen screen-centered" style="display: flex;">
-      <h2 class="fw-bold text-center mb-1" style="color: var(--primary);">SinCamello</h2>
-      <p class="text-center text-muted mb-4 small text-uppercase">Acceso Beta Previo</p>
+      <h2 class="fw-bold text-center mb-1" style="color: var(--primary);">Sin Camello</h2>
+       <div class="text-center emoji-subtitle"><span style="display: inline-block; transform: scaleX(-1);">🐫...          🏃🏼‍♀️💨</span></div>
+      <p class="text-center text-muted mb-4 small text-uppercase">Acceso previo versión Beta</p>
       <input type="text" id="userId" class="form-control text-center fw-bold fs-4" placeholder="Código de acceso" maxlength="5">
       <button onclick="handleLogin()" id="btnLogin" class="btn btn-main">Entrar</button>
       <div id="loginLoader" class="loader"><div class="spinner-border text-success spinner-border-sm"></div></div>
+      <div id="statusMessage"></div>
     </div>
 
     <!-- DATOS BÁSICOS -->
     <div id="basicDataSection" class="screen screen-centered">
-      <h3 class="fw-bold text-center mb-4">Tu Perfil</h3>
+      <h3 class="fw-bold text-center mb-4">Información Básica</h3>
       <input type="text" id="nombres" class="form-control" placeholder="Nombres">
       <input type="text" id="apellidos" class="form-control" placeholder="Apellidos">
       <input type="tel" id="telefono" class="form-control" placeholder="Teléfono / WhatsApp">
@@ -207,6 +230,37 @@
       }
     }
 
+    const mensajesCarga = [
+      "Estamos creando tu entorno de trabajo...",
+      "Esto puede tardar unos instantes...",
+      "Despertando a Jimmy para que te ayude...",
+      "Organizando los archivadores en la nube...",
+      "Casi listo, estamos preparando tu oficina virtual..."
+    ];
+
+    let mensajeInterval;
+
+    function rotarMensajes() {
+      const cajaMensaje = document.getElementById('statusMessage');
+      let i = 0;
+  
+      // Ponemos el primero de inmediato
+      cajaMensaje.innerText = mensajesCarga[0];
+  
+      // Cambiamos cada 3 segundos
+      mensajeInterval = setInterval(() => {
+        i = (i + 1) % mensajesCarga.length;
+        cajaMensaje.style.opacity = 0; // Efecto de desvanecimiento
+    
+      setTimeout(() => {
+        cajaMensaje.innerText = mensajesCarga[i];
+        cajaMensaje.style.opacity = 1;
+        }, 500);
+    
+      }, 3000);
+    }
+
+
     async function handleLogin() {
       const val = document.getElementById('userId').value.trim().toUpperCase();
       if(val.length < 5) return;
@@ -215,11 +269,13 @@
       const btn = document.getElementById('btnLogin');
       
       loader.style.display = 'block';
+      rotarMensajes(); // Inicia la rotación de frases
       btn.disabled = true;
 
       const res = await call({ action: "setup", userId: val });
       
       if(res.success) {
+        clearInterval(mensajeInterval); // Detiene la rotación
         currentId = val;
         showScreen(res.step);
       } else {
@@ -309,7 +365,7 @@
       if(tempElement) tempElement.remove();
 
       // 4. Mostrar respuesta IA (viniendo de Gemini 2.5)
-      const msg = res.success ? res.msg : ;
+      const msg = res.success ? res.msg : "HUbo un fallo en el servidor";
       chat.innerHTML += `<div class="bubble bubble-bot">${msg}</div>`;
       
       btn.innerHTML = "➤"; 

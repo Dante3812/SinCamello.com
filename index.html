@@ -247,7 +247,7 @@
       const res = await call({ action: "saveBasic", userId: currentId, data });
       
       if(res.success) {
-        const chatWindow = document.getElementByid('chatWindow')
+        const chatWindow = document.getElementById('chatWindow')
         chatWindow.innerHTML = `
           <div class="bubble bubble-bot">
             <strong>Jimmy:</strong> ¡Hola ${userName}! Qué gusto saludarte. Soy Jimmy, tu asistente IA y estoy listo para que armemos ese perfil profesional.

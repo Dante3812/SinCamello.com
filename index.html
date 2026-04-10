@@ -1,513 +1,90 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <base target="_top">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SinCamello.com</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EmpleApp | Máquina de CVs</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    :root {
-      --primary: #1abc9c;
-      --primary-dark: #16a085;
-      --bg-light: #f3f4f6;
-      --bg-white: #ffffff;
-      --chat-bot: #ffffff;
-      --chat-user: #1abc9c;
-    }
-
-    body { 
-      background: #d1d5db; 
-      margin: 0; 
-      height: 100dvh; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      font-family: 'Segoe UI', system-ui, sans-serif; 
-    }
-    
-    .app-container { 
-      background: var(--bg-white); 
-      width: 100%; 
-      max-width: 480px; 
-      height: 100dvh; 
-      display: flex; 
-      flex-direction: column; 
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
-
-    @media (min-width: 481px) {
-      .app-container { height: 90dvh; border-radius: 1.5rem; }
-    }
-
-    /* Pantallas */
-    .screen {
-      display: none; 
-      flex-direction: column;
-      height: 100%;
-      width: 100%;
-      animation: fadeIn 0.4s ease-out;
-    }
-
-     #loginSection {
-      justify-content: flex-start !important; 
-      padding-top: 20%; 
-    }
-
-    #loginSection h2 {
-      font-size: 2.8rem !important; /* Título más grande */
-      margin-bottom: 1.2rem !important; /* Espacio hacia los emojis */
-    }
-
-    #loginSection p {
-      font-style: italic; /* ¡Aquí queda en cursiva! */
-      color: #9ca3af;    /* Un gris un poquito más claro para que no compita */
-      margin-bottom: 2.5rem !important; /* Espacio antes de llegar al código de acceso */
-    }
-
-    .custom-subtitle {
-      font-size: 1rem; 
-      margin-bottom: 5rem; /* Ajusta este espacio según necesites */
-      text-align: center;
-      color: #6b7280; /* Un gris suave que queda muy profesional */
-      font-weight: 500;
-    }
-
-    #statusMessage {
-      margin-top: 15px;
-      font-style: italic;
-      color: #666;
-      min-height: 24px;
-      transition: opacity 0.5s ease;
-      text-align: center;
-    }
-
-    .screen-centered { justify-content: center; padding: 2rem; overflow-y: auto; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    /* UI General */
-    .btn-main { background: var(--primary); border: none; padding: 0.9rem; color: white; font-weight: 600; border-radius: 0.8rem; transition: 0.2s; width: 100%; }
-    .btn-main:hover { background: var(--primary-dark); transform: translateY(-1px); color: white; }
-    .form-control { border-radius: 0.8rem; padding: 0.8rem; border: 1px solid #ddd; background: #f9fafb; margin-bottom: 1rem; }
-    .loader { display: none; text-align: center; margin-top: 1rem; }
-    
-    /* Chat UI */
-    .chat-header {
-      padding: 0.8rem 1.2rem; /* Un poquito más de aire */
-      text-align: center;
-      font-weight: bold;
-      border-bottom: 1px solid #eee;
-      background: white;
-      z-index: 5;
-      display: flex; /* ESTO ES LO CLAVE PARA EL BOTÓN */
-      justify-content: space-between; 
-      align-items: center;
-    }
-
-    /* El estilo del botón ponlo justo debajo del bloque anterior */
-    .btn-finalize {
-      background: #fef2f2; 
-      color: #ef4444;       
-      border: 1px solid #fee2e2;
-      padding: 0.4rem 0.8rem;
-      border-radius: 0.6rem;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer; /* Para que salga la manito al pasar el mouse */
-    }
-
-    .chat-window { 
-      flex-grow: 1; 
-      overflow-y: auto; 
-      background: #f0f2f5; 
-      padding: 1rem; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 0.8rem;
-    }
-    
-    .bubble { 
-      padding: 0.8rem 1rem; 
-      border-radius: 1.2rem; 
-      max-width: 85%; 
-      font-size: 0.95rem; 
-      line-height: 1.4;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-    .bubble-bot { background: var(--chat-bot); align-self: flex-start; border-bottom-left-radius: 0.2rem; color: #333; }
-    .bubble-user { background: var(--chat-user); color: white; align-self: flex-end; border-bottom-right-radius: 0.2rem; }
-    
-    /* Input Area */
-    .input-wrapper { 
-      background: white; 
-      padding: 0.8rem; 
-      display: flex; 
-      gap: 0.5rem; 
-      align-items: flex-end;
-      border-top: 1px solid #eee;
-    }
-    
-    .input-wrapper textarea { 
-      flex-grow: 1; 
-      border: none;
-      background: #f3f4f6;
-      border-radius: 1.2rem;
-      padding: 0.6rem 1rem;
-      max-height: 100px;
-      resize: none;
-      outline: none;
-    }
-
-    .btn-circle { 
-      width: 45px; height: 45px; border-radius: 50%; border: none;
-      display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
-      transition: 0.2s;
-      flex-shrink: 0;
-    }
-    .btn-send { background: var(--primary); color: white; }
-    .btn-send:disabled { background: #ccc; }
-    .btn-mic { background: #fee2e2; color: #ef4444; }
-    .btn-mic.active { background: #ef4444; color: white; animation: pulse 1.5s infinite; }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-    }
+    body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
+    .card-custom { border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: none; }
+    .btn-custom { background-color: #2c3e50; color: white; font-weight: 600; border-radius: 0.5rem; padding: 12px; }
+    .btn-custom:hover { background-color: #1a252f; color: white; }
+    #loader { display: none; }
+    #result-box { display: none; border-left: 4px solid #27ae60; background: #eafaf1; border-radius: 0.5rem; }
   </style>
 </head>
-<body>
+<body class="d-flex align-items-center justify-content-center vh-100">
 
-  <div class="app-container">
-    
-    <!-- LOGIN -->
-    <div id="loginSection" class="screen screen-centered" style="display: flex;">
-      <h2 class="fw-bold text-center mb-1" style="color: var(--primary);">SinCamello.com</h2>
-      <div class="text-center custom-subtitle">Asistencia IA para búsqueda de empleo</div>
-      <p class="text-center text-muted mb-4 small">*Acceso previo versión Beta</p>
-      <input type="text" id="userId" class="form-control text-center fw-bold fs-4" placeholder="Código de acceso" maxlength="5">
-      <button onclick="handleLogin()" id="btnLogin" class="btn btn-main">Entrar</button>
-      <div id="loginLoader" class="loader"><div class="spinner-border text-success spinner-border-sm"></div></div>
-      <div id="statusMessage"></div>
-    </div>
+  <div class="container" style="max-width: 600px;">
+    <div class="card card-custom p-4">
+      <h2 class="text-center fw-bold mb-1">EmpleApp 🚀</h2>
+      <p class="text-center text-muted mb-4">Generador Industrial de Hojas de Vida</p>
 
-    <!-- DATOS BÁSICOS -->
-    <div id="basicDataSection" class="screen screen-centered">
-      <h3 class="fw-bold text-center mb-4">Información Básica</h3>
-      <input type="text" id="nombres" class="form-control" placeholder="Nombres">
-      <input type="text" id="apellidos" class="form-control" placeholder="Apellidos">
-      <input type="tel" id="telefono" class="form-control" placeholder="Teléfono / WhatsApp">
-      <input type="email" id="email" class="form-control" placeholder="Correo">
-      <input type="text" id="ciudad" class="form-control" placeholder="Ciudad / Municipio">
-      <button onclick="handleSaveData()" id="btnSave" class="btn btn-main">Comenzar</button>
-      <div id="saveLoader" class="loader"><div class="spinner-border text-success spinner-border-sm"></div></div>
-    </div>
-
-    <!-- CHAT (MÓDULO IA) -->
-    <div id="academicSection" class="screen">
-      <div class="chat-header"><span>🐫    SinCamello IA</span>
-      <button onclick="handleFinalize()" class="btn-finalize">Finalizar</button>
+      <div class="mb-3">
+        <label class="form-label fw-bold">Empresa / Vacante</label>
+        <input type="text" id="empresa" class="form-control" placeholder="Ej: Analista de Datos - MercadoLibre">
       </div>
-      <div id="chatWindow" class="chat-window">
-        <div class="bubble bubble-bot">
-          Hola, ¿Cómo estás?, me presento, soy Jimmy, tu asistente IA y estoy listo para que construyamos tu perfil profesional.
-        </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-bold">Descripción de la Oferta</label>
+        <textarea id="oferta" class="form-control" rows="5" placeholder="Pega aquí todo el texto de la oferta de trabajo..."></textarea>
       </div>
-      <div class="input-wrapper">
-        <textarea id="transcriptPreview" rows="1" placeholder="Habla o escribe..." oninput="autoResize(this); checkInput()"></textarea>
-        <button id="btnMic" onclick="toggleMic()" class="btn-circle btn-mic" title="Usar voz">🎙️</button>
-        <button id="btnSend" onclick="sendToIA()" class="btn-circle btn-send" disabled title="Enviar">➤</button>
+
+      <button id="btnGenerar" onclick="generarCV()" class="btn btn-custom w-100">Fabricar CV a la Medida</button>
+
+      <div id="loader" class="text-center mt-4">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted fw-bold">Gemini está analizando la vacante y redactando...</p>
+      </div>
+
+      <div id="result-box" class="p-3 mt-4 text-center">
+        <h5 class="fw-bold text-success mb-2">¡Hoja de Vida Lista!</h5>
+        <a id="link-doc" href="#" target="_blank" class="btn btn-success fw-bold">📄 Abrir Documento Generado</a>
       </div>
     </div>
-
   </div>
 
   <script>
-    /**
-     * IMPORTANTE: Mantén actualizada esta URL con la última versión de tu Apps Script implementada
-     */
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyzfR-iKguWuY9WenXPFTt-I_U3xQsZSismphsAoKrlmkKVceBCPwjH1jLa3uhsf3-y/exec";
-    let currentId = "";
-    let userName = "";
-    let lastUserMessage = "";
+    // IMPORTANTE: Pon aquí la URL de tu Apps Script implementado
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxspHegtVg6Y5wIsV3P8w-0RVLwDo9MnDEtn4xMY8xWrvQO3yt1nXr9MdRaMXjAy2Qs5A/exec"; 
 
-    function showScreen(id) {
-      document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-      const target = document.getElementById(id);
-      if(target) {
-        target.style.display = 'flex';
-        if(id === 'academicSection') scrollChat();
-      }
-    }
+    async function generarCV() {
+      const empresa = document.getElementById('empresa').value.trim();
+      const oferta = document.getElementById('oferta').value.trim();
 
-    async function call(payload) {
-      try {
-        const resp = await fetch(WEB_APP_URL, { 
-          method: 'POST', 
-          body: JSON.stringify(payload) 
-        });
-        return await resp.json();
-      } catch (e) {
-        console.error("Error en call:", e);
-        return { success: false, error: "Error de conexión con el servidor." };
-      }
-    }
-
-    const mensajesCarga = [
-      "Estamos creando tu entorno de trabajo...",
-      "Esto puede tardar unos instantes...",
-      "Despertando a Jimmy para que te ayude...",
-      "Organizando los archivadores en la nube...",
-      "Casi listo, estamos preparando tu oficina virtual..."
-    ];
-
-    let mensajeInterval;
-
-    function rotarMensajes() {
-      const cajaMensaje = document.getElementById('statusMessage');
-      let i = 0;
-  
-      // Ponemos el primero de inmediato
-      cajaMensaje.innerText = mensajesCarga[0];
-  
-      // Cambiamos cada 3 segundos
-      mensajeInterval = setInterval(() => {
-        i = (i + 1) % mensajesCarga.length;
-        cajaMensaje.style.opacity = 0; // Efecto de desvanecimiento
-    
-      setTimeout(() => {
-        cajaMensaje.innerText = mensajesCarga[i];
-        cajaMensaje.style.opacity = 1;
-        }, 500);
-    
-      }, 4000);
-    }
-
-
-    async function handleLogin() {
-      const val = document.getElementById('userId').value.trim().toUpperCase();
-      if(val.length < 5) return;
-      
-      const loader = document.getElementById('loginLoader');
-      const btn = document.getElementById('btnLogin');
-      
-      loader.style.display = 'block';
-      rotarMensajes(); // Inicia la rotación de frases
-      btn.disabled = true;
-
-      const res = await call({ action: "setup", userId: val });
-      
-      if(res.success) {
-        clearInterval(mensajeInterval); // Detiene la rotación
-        currentId = val;
-        showScreen(res.step);
-      } else {
-        alert(res.error || "Error al ingresar.");
-        loader.style.display = 'none';
-        btn.disabled = false;
-      }
-    }
-
-    async function handleSaveData() {
-      userName = document.getElementById('nombres').value.trim();
-      const data = {
-        nombres: userName,
-        apellidos: document.getElementById('apellidos').value,
-        telefono: document.getElementById('telefono').value,
-        email: document.getElementById('email').value,
-        ciudad: document.getElementById('ciudad').value
-      };
-
-      if(!data.nombres || !data.email) {
-        alert("Por favor completa al menos nombre y correo.");
+      if (!empresa || !oferta) {
+        alert("Por favor llena la empresa y pega la oferta.");
         return;
       }
 
-      document.getElementById('saveLoader').style.display = 'block';
-      const res = await call({ action: "saveBasic", userId: currentId, data });
-      
-      if(res.success) {
-        const chatWindow = document.getElementById('chatWindow');
-        chatWindow.innerHTML = `
-          <div class="bubble bubble-bot">
-            ¡Hola ${userName}! Qué gusto saludarte. Soy Jimmy, tu asistente IA y estoy listo para que construyamos tu perfil profesional.
-          </div>
-          `;
-        showScreen('academicSection');
-        
-      } else {
-        alert("Hubo un problema al guardar tus datos.");
-        document.getElementById('saveLoader').style.display = 'none';
-      }
-    }
+      // Cambiar UI a estado de carga
+      document.getElementById('btnGenerar').disabled = true;
+      document.getElementById('loader').style.display = 'block';
+      document.getElementById('result-box').style.display = 'none';
 
-    // --- LÓGICA DE CHAT & IA ---
-    
-    function autoResize(el) {
-      el.style.height = 'auto';
-      el.style.height = (el.scrollHeight) + 'px';
-    }
+      try {
+        const response = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({ empresa: empresa, oferta: oferta }),
+          // IMPORTANTE PARA GITHUB PAGES Y APPS SCRIPT:
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
+        });
 
-    function checkInput() {
-      const text = document.getElementById('transcriptPreview').value.trim();
-      document.getElementById('btnSend').disabled = text.length < 3;
-    }
+        const data = await response.json();
 
-    function scrollChat() {
-      const w = document.getElementById('chatWindow');
-      w.scrollTop = w.scrollHeight;
-    }
-
-    async function sendToIA() {
-      const input = document.getElementById('transcriptPreview');
-      const text = input.value.trim();
-      lastUserMessage = text;
-      if(!text) return;
-
-      const chat = document.getElementById('chatWindow');
-      const btn = document.getElementById('btnSend');
-
-      // 1. Mostrar mensaje usuario
-      chat.innerHTML += `<div class="bubble bubble-user">${text}</div>`;
-      input.value = ""; 
-      autoResize(input); 
-      checkInput(); 
-      scrollChat();
-
-      // 2. Estado "Pensando"
-      btn.innerHTML = "⏳"; 
-      btn.disabled = true;
-      const tempId = "t-" + Date.now();
-      chat.innerHTML += `<div id="${tempId}" class="bubble bubble-bot"><em>...</em></div>`;
-      scrollChat();
-
-       // 3. Llamar Backend
-      const res = await call({ action: "saveUserData", userId: currentId, rawText: text });
-      
-      const tempElement = document.getElementById(tempId);
-      if(tempElement) tempElement.remove();
-
-      // 4. Mostrar respuesta IA o Botón de Reintento
-      if (res.success) {
-        chat.innerHTML += `<div class="bubble bubble-bot">${res.msg}</div>`;
-      } else if (res.needRetry) {
-        // Pintamos el botón circular de reintento
-        chat.innerHTML += `
-          <div class="text-center my-2" id="retryContainer">
-            <span class="text-muted small d-block mb-1">Jimmy perdió la señal 📡</span>
-            <button onclick="retryLastMessage()" class="btn btn-outline-danger btn-circle" style="width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; display: inline-flex;">🔄</button>
-          </div>`;
-      } else {
-        chat.innerHTML += `<div class="bubble bubble-bot">Fallo de servidor. Recarga la página.</div>`;
-      }
-      
-      btn.innerHTML = "➤"; 
-      btn.disabled = false;
-      scrollChat();
-    }
-
-    async function retryLastMessage() {
-      // Borramos el botón viejo
-      const retryNode = document.getElementById('retryContainer');
-      if (retryNode) retryNode.remove();
-
-      const chat = document.getElementById('chatWindow');
-      const btn = document.getElementById('btnSend');
-
-      // Volvemos a pintar los punticos de "Pensando"
-      btn.innerHTML = "⏳"; 
-      btn.disabled = true;
-      const tempId = "t-" + Date.now();
-      chat.innerHTML += `<div id="${tempId}" class="bubble bubble-bot"><em>...</em></div>`;
-      scrollChat();
-
-      // Disparamos al backend OTRA VEZ con el último mensaje guardado
-      const res = await call({ action: "saveUserData", userId: currentId, rawText: lastUserMessage });
-      
-      const tempElement = document.getElementById(tempId);
-      if (tempElement) tempElement.remove();
-
-      // Evaluamos la nueva respuesta
-      if (res.success) {
-        chat.innerHTML += `<div class="bubble bubble-bot">${res.msg}</div>`;
-      } else if (res.needRetry) {
-        chat.innerHTML += `
-          <div class="text-center my-2" id="retryContainer">
-            <span class="text-muted small d-block mb-1">Sigue sin señal 📡</span>
-            <button onclick="retryLastMessage()" class="btn btn-outline-danger btn-circle" style="width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; display: inline-flex;">🔄</button>
-          </div>`;
-      } else {
-        chat.innerHTML += `<div class="bubble bubble-bot">Fallo de servidor. Recarga la página.</div>`;
-      }
-      
-      btn.innerHTML = "➤"; 
-      checkInput();
-      scrollChat();
-    }
-
-    function handleFinalize() {
-      if(confirm("¿Seguro que terminamos? Esto enviará tus datos para generar el perfil.")) {
-      // Aquí es donde trabajaremos la lógica interna de "lo de lo de lo interno"
-      alert("¡Perfecto! Procesando tu información...");
-      // Ejemplo: call({ action: "finalize", userId: currentId });
-      }
-    }
-
-    // --- RECONOCIMIENTO DE VOZ ---
-    let recognition;
-    let active = false;
-
-    if ('webkitSpeechRecognition' in window || 'speechRecognition' in window) {
-      const SpeechRecognition = window.webkitSpeechRecognition || window.speechRecognition;
-      recognition = new SpeechRecognition();
-      recognition.lang = 'es-CO';
-      recognition.continuous = true;
-      recognition.interimResults = false;
-
-      recognition.onresult = (e) => {
-        const t = e.results[e.results.length - 1][0].transcript;
-        const input = document.getElementById('transcriptPreview');
-        input.value += (input.value ? " " : "") + t;
-        autoResize(input); 
-        checkInput();
-      };
-
-      recognition.onend = () => {
-        active = false;
-        document.getElementById('btnMic').classList.remove('active');
-      };
-
-      recognition.onerror = (e) => {
-        console.error("Error Speech:", e.error);
-        stopMic();
-      };
-    }
-
-    function toggleMic() {
-      if(!recognition) return alert("Tu navegador no soporta reconocimiento de voz.");
-      const btn = document.getElementById('btnMic');
-      if(!active) {
-        try {
-          recognition.start(); 
-          active = true; 
-          btn.classList.add('active');
-        } catch(e) { console.error(e); }
-      } else {
-        stopMic();
-      }
-    }
-
-    function stopMic() {
-      if(recognition && active) {
-        recognition.stop();
-        active = false;
-        document.getElementById('btnMic').classList.remove('active');
+        if (data.estado === "exito") {
+          document.getElementById('link-doc').href = data.urlDocumento;
+          document.getElementById('result-box').style.display = 'block';
+        } else {
+          alert("Error desde la oficina: " + data.mensaje);
+        }
+      } catch (error) {
+        alert("Error de conexión. Revisa la consola.");
+        console.error(error);
+      } finally {
+        document.getElementById('btnGenerar').disabled = false;
+        document.getElementById('loader').style.display = 'none';
       }
     }
   </script>

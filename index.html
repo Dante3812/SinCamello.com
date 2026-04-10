@@ -3,85 +3,114 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EmpleApp | Máquina de CVs</title>
+  <title>Sin Camello | Radar de Ofertas</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
+    body { background-color: #e9ecef; font-family: 'Segoe UI', sans-serif; }
     .card-custom { border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: none; }
-    .btn-custom { background-color: #2c3e50; color: white; font-weight: 600; border-radius: 0.5rem; padding: 12px; }
-    .btn-custom:hover { background-color: #1a252f; color: white; }
-    #loader { display: none; }
-    #result-box { display: none; border-left: 4px solid #27ae60; background: #eafaf1; border-radius: 0.5rem; }
+    .btn-main { background-color: #2c3e50; color: white; font-weight: 600; border-radius: 0.5rem; }
+    .btn-main:hover { background-color: #1a252f; color: white; }
+    .btn-success-custom { background-color: #27ae60; color: white; font-weight: bold; border-radius: 0.5rem; }
+    #loader, #analisis-box, #result-box { display: none; }
+    .analisis-texto { white-space: pre-wrap; font-size: 0.95rem; color: #333; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db; }
   </style>
 </head>
 <body class="d-flex align-items-center justify-content-center vh-100">
 
   <div class="container" style="max-width: 600px;">
     <div class="card card-custom p-4">
-      <h2 class="text-center fw-bold mb-1">EmpleApp 🚀</h2>
-      <p class="text-center text-muted mb-4">Generador Industrial de Hojas de Vida</p>
+      <h2 class="text-center fw-bold mb-1">SinCamello.com</h2>
+      <p class="text-center text-muted mb-4">Radar y Fábrica de CVs</p>
 
-      <div class="mb-3">
-        <label class="form-label fw-bold">Empresa / Vacante</label>
-        <input type="text" id="empresa" class="form-control" placeholder="Ej: Analista de Datos - MercadoLibre">
+      <div id="step-1">
+        <div class="mb-3">
+          <label class="form-label fw-bold">Enlace de la Oferta</label>
+          <input type="url" id="linkOferta" class="form-control" placeholder="https://www.computrabajo.com.co/...">
+        </div>
+        <button id="btnAnalizar" onclick="analizarOferta()" class="btn btn-main w-100 p-2">🔍 Extraer y Analizar Oferta</button>
       </div>
-
-      <div class="mb-4">
-        <label class="form-label fw-bold">Descripción de la Oferta</label>
-        <textarea id="oferta" class="form-control" rows="5" placeholder="Pega aquí todo el texto de la oferta de trabajo..."></textarea>
-      </div>
-
-      <button id="btnGenerar" onclick="generarCV()" class="btn btn-custom w-100">Fabricar CV a la Medida</button>
 
       <div id="loader" class="text-center mt-4">
         <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 text-muted fw-bold">Gemini está analizando la vacante y redactando...</p>
+        <p id="loader-text" class="mt-2 text-muted fw-bold">Explorando la vacante...</p>
+      </div>
+
+      <div id="analisis-box" class="mt-4">
+        <h5 class="fw-bold text-primary">Diagnóstico de la Oferta</h5>
+        <div id="texto-diagnostico" class="analisis-texto mb-3"></div>
+        <button id="btnGenerar" onclick="generarCVFinal()" class="btn btn-success-custom w-100 p-2">⚡ ¡Me sirve! Crear Hoja de Vida</button>
       </div>
 
       <div id="result-box" class="p-3 mt-4 text-center">
-        <h5 class="fw-bold text-success mb-2">¡Hoja de Vida Lista!</h5>
+        <h5 class="fw-bold text-success mb-2">¡Misión Cumplida!</h5>
         <a id="link-doc" href="#" target="_blank" class="btn btn-success fw-bold">📄 Abrir Documento Generado</a>
       </div>
     </div>
   </div>
 
   <script>
-    // IMPORTANTE: Pon aquí la URL de tu Apps Script implementado
+    // IMPORTANTE: URL de tu nuevo despliegue
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxspHegtVg6Y5wIsV3P8w-0RVLwDo9MnDEtn4xMY8xWrvQO3yt1nXr9MdRaMXjAy2Qs5A/exec"; 
+    
+    // Variables globales para guardar temporalmente lo que extraiga el back
+    let ofertaCrudaGlobal = ""; 
+    let empresaGlobal = "Empresa_Detectada";
 
-    async function generarCV() {
-      const empresa = document.getElementById('empresa').value.trim();
-      const oferta = document.getElementById('oferta').value.trim();
+    async function analizarOferta() {
+      const link = document.getElementById('linkOferta').value.trim();
+      if (!link) return alert("Pega un enlace válido.");
 
-      if (!empresa || !oferta) {
-        alert("Por favor llena la empresa y pega la oferta.");
-        return;
-      }
-
-      // Cambiar UI a estado de carga
-      document.getElementById('btnGenerar').disabled = true;
+      document.getElementById('btnAnalizar').disabled = true;
       document.getElementById('loader').style.display = 'block';
-      document.getElementById('result-box').style.display = 'none';
+      document.getElementById('loader-text').innerText = "Scrapeando y analizando compatibilidad con tu perfil...";
+      document.getElementById('analisis-box').style.display = 'none';
 
       try {
         const response = await fetch(WEB_APP_URL, {
           method: 'POST',
-          body: JSON.stringify({ empresa: empresa, oferta: oferta }),
-          // IMPORTANTE PARA GITHUB PAGES Y APPS SCRIPT:
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
+          body: JSON.stringify({ action: 'analizar', url: link }),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
+        const data = await response.json();
 
+        if (data.estado === "exito") {
+          // Guardamos el texto crudo para mandarlo en el paso 2
+          ofertaCrudaGlobal = data.ofertaCruda; 
+          document.getElementById('texto-diagnostico').innerText = data.analisis;
+          document.getElementById('analisis-box').style.display = 'block';
+        } else {
+          alert("Error: " + data.mensaje);
+        }
+      } catch (error) {
+        alert("Fallo de conexión.");
+      } finally {
+        document.getElementById('btnAnalizar').disabled = false;
+        document.getElementById('loader').style.display = 'none';
+      }
+    }
+
+    async function generarCVFinal() {
+      document.getElementById('btnGenerar').disabled = true;
+      document.getElementById('loader').style.display = 'block';
+      document.getElementById('loader-text').innerText = "Armando la hoja de vida en Drive...";
+      document.getElementById('analisis-box').style.display = 'none';
+
+      try {
+        const response = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'generar', oferta: ofertaCrudaGlobal, empresa: empresaGlobal }),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
         const data = await response.json();
 
         if (data.estado === "exito") {
           document.getElementById('link-doc').href = data.urlDocumento;
           document.getElementById('result-box').style.display = 'block';
         } else {
-          alert("Error desde la oficina: " + data.mensaje);
+          alert("Error generando CV: " + data.mensaje);
         }
       } catch (error) {
-        alert("Error de conexión. Revisa la consola.");
-        console.error(error);
+        alert("Fallo de conexión en la creación.");
       } finally {
         document.getElementById('btnGenerar').disabled = false;
         document.getElementById('loader').style.display = 'none';

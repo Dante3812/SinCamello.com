@@ -387,17 +387,67 @@
       chat.innerHTML += `<div id="${tempId}" class="bubble bubble-bot"><em>...</em></div>`;
       scrollChat();
 
-      // 3. Llamar Backend
+       // 3. Llamar Backend
       const res = await call({ action: "saveUserData", userId: currentId, rawText: text });
       
       const tempElement = document.getElementById(tempId);
       if(tempElement) tempElement.remove();
 
-      // 4. Mostrar respuesta IA (viniendo de Gemini 2.5)
-      const msg = res.success ? res.msg : "Hubo un fallo en el servidor";
-      chat.innerHTML += `<div class="bubble bubble-bot">${msg}</div>`;
+      // 4. Mostrar respuesta IA o Botón de Reintento
+      if (res.success) {
+        chat.innerHTML += `<div class="bubble bubble-bot">${res.msg}</div>`;
+      } else if (res.needRetry) {
+        // Pintamos el botón circular de reintento
+        chat.innerHTML += `
+          <div class="text-center my-2" id="retryContainer">
+            <span class="text-muted small d-block mb-1">Jimmy perdió la señal 📡</span>
+            <button onclick="retryLastMessage()" class="btn btn-outline-danger btn-circle" style="width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; display: inline-flex;">🔄</button>
+          </div>`;
+      } else {
+        chat.innerHTML += `<div class="bubble bubble-bot">Fallo de servidor. Recarga la página.</div>`;
+      }
       
       btn.innerHTML = "➤"; 
+      btn.disabled = false;
+      scrollChat();
+    }
+
+    async function retryLastMessage() {
+      // Borramos el botón viejo
+      const retryNode = document.getElementById('retryContainer');
+      if (retryNode) retryNode.remove();
+
+      const chat = document.getElementById('chatWindow');
+      const btn = document.getElementById('btnSend');
+
+      // Volvemos a pintar los punticos de "Pensando"
+      btn.innerHTML = "⏳"; 
+      btn.disabled = true;
+      const tempId = "t-" + Date.now();
+      chat.innerHTML += `<div id="${tempId}" class="bubble bubble-bot"><em>...</em></div>`;
+      scrollChat();
+
+      // Disparamos al backend OTRA VEZ con el último mensaje guardado
+      const res = await call({ action: "saveUserData", userId: currentId, rawText: lastUserMessage });
+      
+      const tempElement = document.getElementById(tempId);
+      if (tempElement) tempElement.remove();
+
+      // Evaluamos la nueva respuesta
+      if (res.success) {
+        chat.innerHTML += `<div class="bubble bubble-bot">${res.msg}</div>`;
+      } else if (res.needRetry) {
+        chat.innerHTML += `
+          <div class="text-center my-2" id="retryContainer">
+            <span class="text-muted small d-block mb-1">Sigue sin señal 📡</span>
+            <button onclick="retryLastMessage()" class="btn btn-outline-danger btn-circle" style="width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; display: inline-flex;">🔄</button>
+          </div>`;
+      } else {
+        chat.innerHTML += `<div class="bubble bubble-bot">Fallo de servidor. Recarga la página.</div>`;
+      }
+      
+      btn.innerHTML = "➤"; 
+      checkInput();
       scrollChat();
     }
 
